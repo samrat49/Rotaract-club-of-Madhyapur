@@ -1,0 +1,2195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Club Finance Tracker</title>
+<style>
+  :root {
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --green: #059669;
+    --red: #dc2626;
+    --amber: #d97706;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  nav {
+    display: flex;
+    gap: 4px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    overflow-x: auto;
+  }
+  nav button {
+    background: none;
+    border: none;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  nav button.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 20px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .stat-card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .stat-card .value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-card.green .value { color: var(--green); }
+  .stat-card.red .value { color: var(--red); }
+  .stat-card.blue .value { color: var(--blue); }
+  .stat-card.amber .value { color: var(--amber); }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
+  }
+  .card-header h2 { font-size: 15px; margin: 0; }
+  .card-header .header-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .card-body { padding: 18px; }
+
+  button.btn {
+    background: var(--blue); color: white; border: none; padding: 8px 14px;
+    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  button.btn:hover { background: var(--blue-dark); }
+  button.btn.secondary { background: white; color: var(--text); border: 1px solid var(--border); }
+  button.btn.secondary:hover { background: #f1f5f9; }
+  button.btn.secondary.active { background: var(--blue); color: white; border-color: var(--blue); }
+  button.btn.danger { background: var(--red); }
+  button.btn.small { padding: 5px 10px; font-size: 12px; }
+  button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  a.link-btn, button.link-btn {
+    background: none; border: none; color: var(--blue); cursor: pointer;
+    font-weight: 600; padding: 0; font-size: inherit; text-decoration: underline;
+    text-align: left; font-family: inherit;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .table-wrap { overflow-x: auto; }
+
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge.paid { background: #d1fae5; color: #047857; }
+  .badge.partial { background: #fef3c7; color: #b45309; }
+  .badge.unpaid { background: #fee2e2; color: #b91c1c; }
+  .badge.income { background: #d1fae5; color: #047857; }
+  .badge.expense { background: #fee2e2; color: #b91c1c; }
+  .badge.neutral { background: #e2e8f0; color: #334155; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+
+  form.inline-form {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px; align-items: end;
+  }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; background: white;
+  }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+    display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100;
+    overflow-y: auto;
+  }
+  .overlay.open { display: flex; }
+  .modal { background: white; border-radius: 12px; width: 100%; max-width: 420px; padding: 20px; margin: auto; }
+  .modal.wide { max-width: 660px; }
+  .modal h3 { margin: 0 0 4px; font-size: 16px; }
+  .modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .modal .field { margin-bottom: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .modal-close-x {
+    position: absolute; top: 14px; right: 16px; background: none; border: none;
+    font-size: 18px; cursor: pointer; color: var(--muted);
+  }
+  .modal-inner-relative { position: relative; }
+
+  .balance-edit { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .balance-edit .field { flex: 1; min-width: 160px; }
+
+  .month-filter { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; }
+
+  .event-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .event-card {
+    border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--card);
+    cursor: pointer; transition: box-shadow .15s;
+  }
+  .event-card:hover { box-shadow: 0 4px 14px rgba(15,23,42,0.08); }
+  .event-card .ev-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .event-card .ev-date { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .event-card .ev-row { display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; }
+  .progress-track { background: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden; margin-top: 10px; }
+  .progress-fill { height: 100%; border-radius: 999px; }
+
+  .summary-highlight {
+    background: linear-gradient(135deg, #eef3ff, #f4f6fb);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .summary-highlight h3 { margin: 0 0 10px; font-size: 14px; }
+
+  .bill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .bill-event-card {
+    border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--card);
+    cursor: pointer; transition: box-shadow .15s;
+  }
+  .bill-event-card:hover { box-shadow: 0 4px 14px rgba(15,23,42,0.08); }
+  .bill-event-card .be-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .bill-event-card .be-count { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .bill-thumb-strip { display: flex; gap: 6px; }
+  .bill-thumb-strip img { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+  .bill-thumb-more { width: 52px; height: 52px; border-radius: 6px; background: #f1f5f9; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+
+  .bill-thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 14px; }
+  .bill-thumb-card { position: relative; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #f8fafc; }
+  .bill-thumb-card img { width: 100%; height: 100px; object-fit: cover; display: block; cursor: pointer; }
+  .bill-thumb-card .bill-pdf-icon {
+    width: 100%; height: 100px; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; color: var(--muted); cursor: pointer; background: #eef2f7;
+  }
+  .bill-thumb-card .bill-thumb-meta { padding: 5px 8px 0; font-size: 11px; color: var(--muted); }
+  .bill-thumb-card .bill-thumb-desc { font-size: 11px; color: var(--text); padding: 0 8px 6px; word-break: break-word; }
+  .bill-thumb-card .bill-delete-btn {
+    position: absolute; top: 4px; right: 4px; background: rgba(15,23,42,0.65); color: white; border: none;
+    border-radius: 6px; width: 22px; height: 22px; font-size: 13px; cursor: pointer; line-height: 1;
+  }
+
+  .lightbox-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.85); display: none;
+    align-items: center; justify-content: center; padding: 20px; z-index: 200;
+  }
+  .lightbox-overlay.open { display: flex; }
+  .lightbox-content { max-width: 90vw; max-height: 85vh; }
+  .lightbox-content img { max-width: 90vw; max-height: 85vh; border-radius: 8px; display: block; }
+  .lightbox-close {
+    position: fixed; top: 18px; right: 22px; background: rgba(255,255,255,0.15); color: white;
+    border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 14px; font-weight: 600;
+  }
+
+  footer { text-align: center; color: var(--muted); font-size: 11px; padding: 20px; }
+
+  @media (max-width: 640px) {
+    header { padding: 12px 14px; }
+    main { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1 id="clubNameTitle">Club Finance Tracker</h1>
+    <div class="sub">Cash • Bank • Membership Dues • Events • Monthly Journal</div>
+  </div>
+  <div class="header-actions" id="headerActions" style="display:none;">
+    <span id="authUserLabel" style="font-size:12px; color:var(--muted); align-self:center; margin-right:4px;"></span>
+    <button class="btn secondary small" onclick="exportData()">Export Backup</button>
+    <button class="btn secondary small" onclick="logout()">Log Out</button>
+  </div>
+</header>
+
+<!-- Auth Screen (shown until signed in) -->
+<div class="overlay open" id="authOverlay" style="z-index:300;">
+  <div class="modal" style="max-width:380px;">
+    <h3 id="authTitle">Sign In</h3>
+    <div class="modal-sub">Sign in to see and add the club's shared records. Everyone on this account sees the same live data.</div>
+
+    <div style="display:flex; gap:6px; margin-bottom:14px;">
+      <button type="button" class="btn secondary small" id="authTabLogin" style="flex:1;">Sign In</button>
+      <button type="button" class="btn secondary small" id="authTabRegister" style="flex:1;">Create Account</button>
+    </div>
+
+    <form id="loginForm">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" required /></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" required /></div>
+      <div class="field"><button type="submit" class="btn" id="loginBtn" style="width:100%;">Sign In</button></div>
+    </form>
+
+    <form id="registerForm" style="display:none;">
+      <div class="field"><label>Your Name</label><input type="text" id="regName" required /></div>
+      <div class="field"><label>Email</label><input type="email" id="regEmail" required /></div>
+      <div class="field"><label>Password</label><input type="password" id="regPassword" required minlength="6" /></div>
+      <div class="field"><label>Invite Code</label><input type="text" id="regInviteCode" required /></div>
+      <div class="field"><button type="submit" class="btn" id="registerBtn" style="width:100%;">Create Account</button></div>
+    </form>
+
+    <div id="authError" style="color:var(--red); font-size:12px; margin-top:8px;"></div>
+  </div>
+</div>
+
+<div id="appShell" style="display:none;">
+<nav>
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="members">Membership & Dues</button>
+  <button class="tab-btn" data-tab="transactions">Transactions</button>
+  <button class="tab-btn" data-tab="events">Events</button>
+  <button class="tab-btn" data-tab="bills">Bills</button>
+  <button class="tab-btn" data-tab="settings">Settings</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section id="tab-overview" class="tab active">
+    <div class="stat-grid" id="overviewStats"></div>
+
+    <div class="card">
+      <div class="card-header"><h2>Monthly Summary</h2></div>
+      <div class="card-body table-wrap">
+        <table id="monthlyTable">
+          <thead><tr><th>Month</th><th>Income</th><th>Expense</th><th>Net</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="monthlyEmpty" class="empty" style="display:none;">No transactions recorded yet.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Recent Transactions</h2></div>
+      <div class="card-body table-wrap">
+        <table id="recentTable">
+          <thead><tr><th>Date</th><th>Description</th><th>Account</th><th>Type</th><th>Amount</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="recentEmpty" class="empty" style="display:none;">No transactions yet. Add one from the Transactions tab.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEMBERS -->
+  <section id="tab-members" class="tab">
+    <div class="stat-grid" id="memberStats"></div>
+
+    <div class="card">
+      <div class="card-header"><h2>Add Member</h2></div>
+      <div class="card-body">
+        <form class="inline-form" id="memberForm">
+          <div class="field"><label>Name</label><input type="text" id="mName" required /></div>
+          <div class="field"><label>Phone</label><input type="text" id="mPhone" /></div>
+          <div class="field"><label>Annual Dues (Rs)</label><input type="number" id="mDues" min="0" required /></div>
+          <div class="field"><button type="submit" class="btn">Add Member</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Members</h2>
+        <div class="header-right">
+          <button class="btn secondary small" onclick="exportMembersSummaryCSV()">Export Summary (CSV)</button>
+          <button class="btn secondary small" onclick="exportMembersHistoryCSV()">Export Payment History (CSV)</button>
+        </div>
+      </div>
+      <div class="card-body table-wrap">
+        <table id="memberTable">
+          <thead><tr><th>Name</th><th>Phone</th><th>Annual Dues</th><th>Paid</th><th>Remaining</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="memberEmpty" class="empty" style="display:none;">No members added yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section id="tab-transactions" class="tab">
+    <div class="card">
+      <div class="card-header"><h2>Add Transaction</h2></div>
+      <div class="card-body">
+        <form class="inline-form" id="txnForm">
+          <div class="field"><label>Date</label><input type="date" id="tDate" required /></div>
+          <div class="field"><label>Description</label><input type="text" id="tDesc" required /></div>
+          <div class="field">
+            <label>Type</label>
+            <select id="tType">
+              <option value="Income">Income</option>
+              <option value="Expense">Expense</option>
+            </select>
+          </div>
+          <div class="field"><label>Category</label><select id="tCategory"></select></div>
+          <div class="field">
+            <label>Account</label>
+            <select id="tAccount">
+              <option value="Cash">Cash</option>
+              <option value="Bank">Bank</option>
+            </select>
+          </div>
+          <div class="field"><label>Amount (Rs)</label><input type="number" id="tAmount" min="0" required /></div>
+          <div class="field"><label>Payment Method</label><select id="tMethod"></select></div>
+          <div class="field"><label>Event (optional)</label><select id="tEvent"><option value="none">None</option></select></div>
+          <div class="field"><label>Notes / Reference</label><input type="text" id="tNotes" placeholder="Optional" /></div>
+          <div class="field"><button type="submit" class="btn">Add</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Monthly Journal</h2>
+        <div class="header-right">
+          <select id="monthFilter" class="month-filter"></select>
+          <button class="btn secondary small" onclick="openCsvImportModal()">Import CSV</button>
+          <button class="btn secondary small" onclick="exportMonthlyReportCSV()">Export Month (CSV)</button>
+          <button class="btn secondary small" onclick="exportAllTransactionsCSV()">Export All (CSV)</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="monthlySummaryBlock" style="display:none;">
+          <div class="summary-highlight">
+            <h3 id="monthlySummaryTitle">Month</h3>
+            <div class="stat-grid" id="monthlySummaryStats" style="margin-bottom:0;"></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="txnTable">
+            <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th><th>Method</th><th>Event</th><th>Notes</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="txnEmpty" class="empty" style="display:none;">No transactions yet.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section id="tab-events" class="tab">
+    <div class="stat-grid" id="eventStats"></div>
+
+    <div class="card">
+      <div class="card-header"><h2>Create Event</h2></div>
+      <div class="card-body">
+        <form class="inline-form" id="eventForm">
+          <div class="field"><label>Event Name</label><input type="text" id="eName" required /></div>
+          <div class="field"><label>Event Date</label><input type="date" id="eDate" required /></div>
+          <div class="field"><label>Budget (Rs)</label><input type="number" id="eBudget" min="0" /></div>
+          <div class="field"><label>Expected Income (Rs)</label><input type="number" id="eExpIncome" min="0" /></div>
+          <div class="field"><label>Expected Expense (Rs)</label><input type="number" id="eExpExpense" min="0" /></div>
+          <div class="field"><label>Notes</label><input type="text" id="eNotes" placeholder="Optional" /></div>
+          <div class="field"><button type="submit" class="btn">Create Event</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Events</h2></div>
+      <div class="card-body">
+        <div class="event-grid" id="eventGrid"></div>
+        <div id="eventEmpty" class="empty" style="display:none;">No events created yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BILLS -->
+  <section id="tab-bills" class="tab">
+    <div class="stat-grid" id="billStats"></div>
+
+    <div class="card">
+      <div class="card-header"><h2>Bills by Event</h2></div>
+      <div class="card-body">
+        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+          Bills are filed under the event they belong to, the same way transactions are. Click an event below to upload or view its bills. Bills not tied to any event land under "General".
+        </p>
+        <div class="bill-grid" id="billGrid"></div>
+        <div id="billEmpty" class="empty" style="display:none;">Create an event from the Events tab, then come back here to attach bills to it.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" class="tab">
+    <div class="card">
+      <div class="card-header"><h2>Club Name</h2></div>
+      <div class="card-body">
+        <div class="field" style="max-width:320px;">
+          <label>Name shown at the top of this page</label>
+          <input type="text" id="clubNameInput" />
+        </div>
+        <button class="btn" style="margin-top:10px;" onclick="saveClubName()">Save</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Opening Balances</h2></div>
+      <div class="card-body">
+        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+          Set this once when you start using the tracker. Cash/Bank balances shown on the Overview tab are this opening amount plus every transaction you record.
+        </p>
+        <div class="balance-edit">
+          <div class="field"><label>Opening Cash in Hand (Rs)</label><input type="number" id="openCash" /></div>
+          <div class="field"><label>Opening Cash in Bank (Rs)</label><input type="number" id="openBank" /></div>
+        </div>
+        <button class="btn" style="margin-top:12px;" onclick="saveOpeningBalances()">Save Balances</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Data</h2></div>
+      <div class="card-body">
+        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+          Data is now stored centrally in the club's shared database — everyone signed in sees the same records live. "Export Backup" downloads a snapshot of everything currently loaded, as a safety copy.
+        </p>
+        <button class="btn secondary" onclick="exportData()">Export Backup (.json)</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="overlay" id="paymentOverlay">
+  <div class="modal">
+    <h3>Record Dues Payment</h3>
+    <div id="paymentMemberName" class="modal-sub"></div>
+    <div class="field"><label>Amount Received (Rs)</label><input type="number" id="payAmount" min="0" /></div>
+    <div class="field"><label>Date</label><input type="date" id="payDate" /></div>
+    <div class="field">
+      <label>Account (where the money goes)</label>
+      <select id="payAccount"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
+    </div>
+    <div class="field"><label>Payment Method</label><select id="payMethod"></select></div>
+    <div class="field"><label>Notes / Reference</label><input type="text" id="payNotes" placeholder="Optional" /></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closePaymentModal()">Cancel</button>
+      <button class="btn" onclick="submitPayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Member Modal -->
+<div class="overlay" id="editMemberOverlay">
+  <div class="modal">
+    <h3>Edit Member</h3>
+    <div class="modal-sub">Fix a mistaken name, phone number, or dues amount.</div>
+    <div class="field"><label>Name</label><input type="text" id="editMName" /></div>
+    <div class="field"><label>Phone</label><input type="text" id="editMPhone" /></div>
+    <div class="field"><label>Annual Dues (Rs)</label><input type="number" id="editMDues" min="0" /></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeEditMemberModal()">Cancel</button>
+      <button class="btn" onclick="submitEditMember()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member Detail / History Modal -->
+<div class="overlay" id="memberDetailOverlay">
+  <div class="modal wide modal-inner-relative">
+    <button class="modal-close-x" onclick="closeMemberDetail()">&times;</button>
+    <h3 id="mdName">Member</h3>
+    <div class="modal-sub" id="mdContact"></div>
+    <div class="stat-grid" id="mdStats" style="margin-bottom:16px;"></div>
+    <div class="table-wrap">
+      <table id="mdTable">
+        <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Notes</th><th>Running Total</th><th>Remaining</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="mdEmpty" class="empty" style="display:none;">No payments recorded for this member yet.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="mdExportBtn">Export This Member (CSV)</button>
+      <button class="btn secondary" onclick="closeMemberDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event Detail Modal -->
+<div class="overlay" id="eventDetailOverlay">
+  <div class="modal wide modal-inner-relative">
+    <button class="modal-close-x" onclick="closeEventDetail()">&times;</button>
+    <h3 id="edName">Event</h3>
+    <div class="modal-sub" id="edDate"></div>
+    <div class="stat-grid" id="edStats" style="margin-bottom:16px;"></div>
+    <div id="edNotesWrap" style="margin-bottom:14px; font-size:13px; color:var(--muted);"></div>
+
+    <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
+      <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Add Transaction to this Event</div>
+      <form class="inline-form" id="eventTxnForm">
+        <div class="field"><label>Date</label><input type="date" id="etDate" required /></div>
+        <div class="field"><label>Description</label><input type="text" id="etDesc" required /></div>
+        <div class="field">
+          <label>Type</label>
+          <select id="etType"><option value="Expense">Expense</option><option value="Income">Income</option></select>
+        </div>
+        <div class="field"><label>Category</label><select id="etCategory"></select></div>
+        <div class="field">
+          <label>Account</label>
+          <select id="etAccount"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
+        </div>
+        <div class="field"><label>Amount (Rs)</label><input type="number" id="etAmount" min="0" required /></div>
+        <div class="field"><label>Payment Method</label><select id="etMethod"></select></div>
+        <div class="field"><label>Notes</label><input type="text" id="etNotes" placeholder="Optional" /></div>
+        <div class="field"><button type="submit" class="btn small">Add</button></div>
+      </form>
+    </div>
+
+    <div class="table-wrap">
+      <table id="edTable">
+        <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th><th>Method</th><th>Notes</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="edEmpty" class="empty" style="display:none;">No transactions linked to this event yet.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="edExportBtn">Export Event Report (CSV)</button>
+      <button class="btn danger" id="edDeleteBtn">Delete Event</button>
+      <button class="btn secondary" onclick="closeEventDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bill Detail / Upload Modal -->
+<div class="overlay" id="billDetailOverlay">
+  <div class="modal wide modal-inner-relative">
+    <button class="modal-close-x" onclick="closeBillDetail()">&times;</button>
+    <h3 id="bdName">Bills</h3>
+    <div class="modal-sub" id="bdSub"></div>
+
+    <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px;">
+      <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Upload a Bill</div>
+      <form class="inline-form" id="billUploadForm">
+        <div class="field"><label>Bill Image or PDF</label><input type="file" id="bFile" accept="image/*,application/pdf" required /></div>
+        <div class="field"><label>Link to Event</label><select id="bEventSelect"></select></div>
+        <div class="field"><label>Date</label><input type="date" id="bDate" required /></div>
+        <div class="field"><label>Description</label><input type="text" id="bDesc" placeholder="e.g. Catering invoice" /></div>
+        <div class="field"><button type="submit" class="btn small" id="bUploadBtn">Upload</button></div>
+      </form>
+      <div id="billUploadNote" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+    </div>
+
+    <div class="bill-thumb-grid" id="bdGrid"></div>
+    <div id="bdEmpty" class="empty" style="display:none;">No bills uploaded here yet.</div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeBillDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bill Image Lightbox -->
+<div class="lightbox-overlay" id="billLightbox" onclick="closeBillLightbox()">
+  <button class="lightbox-close" onclick="closeBillLightbox(event)">Close ✕</button>
+  <div class="lightbox-content" id="billLightboxContent" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- CSV Import Modal -->
+<div class="overlay" id="csvImportOverlay">
+  <div class="modal wide modal-inner-relative">
+    <button class="modal-close-x" onclick="closeCsvImport()">&times;</button>
+    <h3>Import Transactions from CSV</h3>
+    <div class="modal-sub">Upload a CSV of transactions (e.g. a month's records or an event's income &amp; expenses). We'll auto-detect the columns — check the mapping and preview below, then import.</div>
+
+    <div class="field">
+      <label>CSV File</label>
+      <input type="file" id="csvFileInput" accept=".csv,text/csv" />
+    </div>
+
+    <div id="csvMappingSection" style="display:none;">
+      <div style="font-size:13px; font-weight:600; margin: 14px 0 10px;">Column Mapping</div>
+      <form class="inline-form" id="csvMappingForm" onsubmit="return false;">
+        <div class="field"><label>Date column</label><select id="mapDate"></select></div>
+        <div class="field"><label>Description column</label><select id="mapDesc"></select></div>
+        <div class="field"><label>Type column (Income/Expense)</label><select id="mapType"></select></div>
+        <div class="field"><label>Amount column</label><select id="mapAmount"></select></div>
+        <div class="field"><label>Income column (if separate)</label><select id="mapIncome"></select></div>
+        <div class="field"><label>Expense column (if separate)</label><select id="mapExpense"></select></div>
+        <div class="field"><label>Category column</label><select id="mapCategory"></select></div>
+        <div class="field"><label>Account column</label><select id="mapAccount"></select></div>
+        <div class="field"><label>Payment Method column</label><select id="mapMethod"></select></div>
+        <div class="field"><label>Notes column</label><select id="mapNotes"></select></div>
+      </form>
+
+      <div class="balance-edit">
+        <div class="field">
+          <label>Default Account</label>
+          <select id="csvDefaultAccount"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
+        </div>
+        <div class="field">
+          <label>Assign all rows to Event (optional)</label>
+          <select id="csvDefaultEvent"><option value="none">None</option></select>
+        </div>
+      </div>
+
+      <div id="csvPreviewWrap" class="table-wrap" style="margin-top:14px;">
+        <div style="font-size:13px; font-weight:600; margin-bottom:8px;">
+          Preview (<span id="csvPreviewCount">0</span> rows will be imported — <span id="csvPreviewIncome">Rs 0</span> income / <span id="csvPreviewExpense">Rs 0</span> expense)
+        </div>
+        <table id="csvPreviewTable">
+          <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Category</th><th>Account</th><th>Amount</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="csvPreviewNote" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeCsvImport()">Cancel</button>
+      <button class="btn" id="csvImportConfirmBtn" onclick="confirmCsvImport()" disabled>Import Transactions</button>
+    </div>
+  </div>
+</div>
+
+<footer>Club Finance Tracker — shared data, signed-in access only.</footer>
+
+<script>
+/* =========================================================
+   DATA MODEL
+   state = {
+     clubName, openingCash, openingBank,
+     members:     [{ id, name, phone, annualDues }],
+     events:      [{ id, name, date, budget, expectedIncome, expectedExpense, notes }],
+     transactions:[{ id, date, description, type, category, account, amount,
+                      paymentMethod, notes, memberId | null, eventId | null }],
+     bills:       [{ id, eventId | null, fileName, fileType, fileData, description, date, uploadedAt }]
+   }
+   The backend (Express + Postgres) is the single source of truth. `state`
+   here is just a client-side cache: on load we fetch everything, and every
+   mutation calls the API first, then updates this cache with the server's
+   response before re-rendering. Members and Events are entities;
+   transactions are the single ledger that links to them via memberId /
+   eventId. Dues paid = sum of transactions with that memberId. Event
+   totals = sum of transactions with that eventId.
+   ========================================================= */
+
+const CATEGORIES = {
+  Income: ["Membership Dues", "Donation", "Sponsorship", "Registration", "Fundraising", "Grant", "Other Income"],
+  Expense: ["Office", "Event", "Printing", "Travel", "Food", "Utilities", "Other Expense"],
+};
+const PAYMENT_METHODS = ["Cash", "Bank Transfer", "eSewa", "Khalti", "IME Pay", "FonePay", "Cheque", "Other"];
+
+function defaultState() {
+  return {
+    clubName: "Club Finance Tracker",
+    openingCash: 0,
+    openingBank: 0,
+    members: [],
+    events: [],
+    transactions: [],
+    bills: [],
+  };
+}
+
+let state = defaultState();
+let paymentTargetMemberId = null;
+let editMemberTargetId = null;
+let memberDetailId = null;
+let eventDetailId = null;
+let billDetailGroupKey = null; // event id, or "general" for unlinked bills
+
+/* =========================================================
+   AUTH + API CLIENT
+   The frontend is served by the same Express app as the API (see
+   backend/index.js), so requests use relative paths and share the
+   origin — no CORS or base-URL configuration needed in production.
+   ========================================================= */
+
+const AUTH_KEY = "cft-auth-v1";
+
+function getAuth() {
+  try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); } catch (e) { return null; }
+}
+function setAuth(auth) { localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); }
+function clearAuth() { localStorage.removeItem(AUTH_KEY); }
+
+// Wraps fetch() with the auth header, JSON handling, and a consistent
+// error shape. Throws an Error with a human-readable message on failure.
+async function apiFetch(path, options = {}) {
+  const auth = getAuth();
+  const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+  if (auth && auth.token) headers["Authorization"] = `Bearer ${auth.token}`;
+
+  let res;
+  try {
+    res = await fetch(path, Object.assign({}, options, { headers }));
+  } catch (err) {
+    throw new Error("Could not reach the server. Check your connection and try again.");
+  }
+
+  if (res.status === 401) {
+    clearAuth();
+    showAuthScreen("Your session expired — please sign in again.");
+    throw new Error("Session expired");
+  }
+
+  let data = null;
+  const text = await res.text();
+  if (text) { try { data = JSON.parse(text); } catch (e) { data = null; } }
+
+  if (!res.ok) {
+    throw new Error((data && data.error) || `Request failed (${res.status})`);
+  }
+  return data;
+}
+
+const api = {
+  get: (path) => apiFetch(path),
+  post: (path, body) => apiFetch(path, { method: "POST", body: JSON.stringify(body) }),
+  put: (path, body) => apiFetch(path, { method: "PUT", body: JSON.stringify(body) }),
+  del: (path) => apiFetch(path, { method: "DELETE" }),
+};
+
+function notifyError(err) {
+  if (err && err.message === "Session expired") return;
+  alert((err && err.message) || "Something went wrong talking to the server. Please try again.");
+}
+
+/* ---------------- Normalize snake_case DB rows into the shapes the
+   render functions below expect. ---------------- */
+function normalizeMember(r) {
+  return { id: r.id, name: r.name, phone: r.phone || "", annualDues: Number(r.annual_dues) || 0 };
+}
+function normalizeEvent(r) {
+  return {
+    id: r.id, name: r.name, date: r.date ? String(r.date).slice(0, 10) : "",
+    budget: Number(r.budget) || 0,
+    expectedIncome: Number(r.expected_income) || 0,
+    expectedExpense: Number(r.expected_expense) || 0,
+    notes: r.notes || "",
+  };
+}
+function normalizeTransaction(r) {
+  return {
+    id: r.id, date: String(r.date).slice(0, 10), description: r.description,
+    type: r.type, category: r.category, account: r.account, amount: Number(r.amount) || 0,
+    paymentMethod: r.payment_method || "", notes: r.notes || "",
+    memberId: r.member_id, eventId: r.event_id,
+  };
+}
+function normalizeBill(r) {
+  return {
+    id: r.id, eventId: r.event_id, fileName: r.file_name, fileType: r.file_type,
+    fileData: r.file_data, description: r.description || "", date: String(r.date).slice(0, 10),
+    uploadedAt: r.created_at,
+  };
+}
+function normalizeSettings(r) {
+  return {
+    clubName: r.club_name || "Club Finance Tracker",
+    openingCash: Number(r.opening_cash) || 0,
+    openingBank: Number(r.opening_bank) || 0,
+  };
+}
+
+async function loadAllData() {
+  const [settings, members, events, transactions, bills] = await Promise.all([
+    api.get("/api/settings"),
+    api.get("/api/members"),
+    api.get("/api/events"),
+    api.get("/api/transactions"),
+    api.get("/api/bills"),
+  ]);
+  state = Object.assign(
+    normalizeSettings(settings || {}),
+    {
+      members: (members || []).map(normalizeMember),
+      events: (events || []).map(normalizeEvent),
+      transactions: (transactions || []).map(normalizeTransaction),
+      bills: (bills || []).map(normalizeBill),
+    }
+  );
+}
+
+/* ---------------- Auth screen ---------------- */
+function showAuthScreen(message) {
+  document.getElementById("authOverlay").classList.add("open");
+  document.getElementById("appShell").style.display = "none";
+  document.getElementById("headerActions").style.display = "none";
+  document.getElementById("authError").textContent = message || "";
+}
+function hideAuthScreen() {
+  document.getElementById("authOverlay").classList.remove("open");
+  document.getElementById("appShell").style.display = "block";
+  document.getElementById("headerActions").style.display = "flex";
+  const auth = getAuth();
+  document.getElementById("authUserLabel").textContent = auth && auth.name ? `Signed in as ${auth.name}` : "";
+}
+function logout() {
+  clearAuth();
+  showAuthScreen("");
+  document.getElementById("loginForm").reset();
+}
+
+function switchAuthTab(tab) {
+  const isLogin = tab === "login";
+  document.getElementById("loginForm").style.display = isLogin ? "block" : "none";
+  document.getElementById("registerForm").style.display = isLogin ? "none" : "block";
+  document.getElementById("authTabLogin").classList.toggle("active", isLogin);
+  document.getElementById("authTabRegister").classList.toggle("active", !isLogin);
+  document.getElementById("authTitle").textContent = isLogin ? "Sign In" : "Create Account";
+  document.getElementById("authError").textContent = "";
+}
+document.getElementById("authTabLogin").addEventListener("click", () => switchAuthTab("login"));
+document.getElementById("authTabRegister").addEventListener("click", () => switchAuthTab("register"));
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const btn = document.getElementById("loginBtn");
+  const errEl = document.getElementById("authError");
+  btn.disabled = true; btn.textContent = "Signing in...";
+  errEl.textContent = "";
+  try {
+    const data = await api.post("/api/auth/login", { email, password });
+    setAuth({ token: data.token, name: data.user?.name || email, email });
+    await bootApp();
+  } catch (err) {
+    errEl.textContent = err.message || "Sign in failed.";
+  } finally {
+    btn.disabled = false; btn.textContent = "Sign In";
+  }
+});
+
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("regName").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value;
+  const inviteCode = document.getElementById("regInviteCode").value.trim();
+  const btn = document.getElementById("registerBtn");
+  const errEl = document.getElementById("authError");
+  btn.disabled = true; btn.textContent = "Creating account...";
+  errEl.textContent = "";
+  try {
+    const data = await api.post("/api/auth/register", { name, email, password, inviteCode });
+    setAuth({ token: data.token, name: data.user?.name || name, email });
+    await bootApp();
+  } catch (err) {
+    errEl.textContent = err.message || "Could not create account.";
+  } finally {
+    btn.disabled = false; btn.textContent = "Create Account";
+  }
+});
+
+// Runs after a successful login/register, and on page load if a token
+// is already stored: fetch all shared data, then render the app.
+async function bootApp() {
+  try {
+    await loadAllData();
+    hideAuthScreen();
+    renderAll();
+  } catch (err) {
+    if (err.message !== "Session expired") {
+      showAuthScreen(err.message || "Could not load data.");
+    }
+  }
+}
+
+/* ---------------- Helpers ---------------- */
+function fmt(n) {
+  n = Number(n) || 0;
+  return "Rs " + n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function monthLabel(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+function monthKey(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function fillSelect(el, options) {
+  el.innerHTML = options.map((o) => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("");
+}
+function eventById(id) { return state.events.find((e) => e.id === id); }
+function memberById(id) { return state.members.find((m) => m.id === id); }
+
+/* ---------------- Derived totals ---------------- */
+function accountTotal(account) {
+  const opening = account === "Cash" ? Number(state.openingCash) || 0 : Number(state.openingBank) || 0;
+  const delta = state.transactions
+    .filter((t) => t.account === account)
+    .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
+  return opening + delta;
+}
+function totalDuesExpected() { return state.members.reduce((s, m) => s + (Number(m.annualDues) || 0), 0); }
+function totalDuesPaid() { return state.members.reduce((s, m) => s + memberPaid(m.id), 0); }
+function memberTransactions(memberId) {
+  return state.transactions.filter((t) => t.memberId === memberId);
+}
+function memberPaid(memberId) {
+  return memberTransactions(memberId).filter((t) => t.type === "Income").reduce((s, t) => s + t.amount, 0);
+}
+function memberStatus(m) {
+  const paid = memberPaid(m.id);
+  if (paid <= 0) return "unpaid";
+  if (paid >= m.annualDues) return "paid";
+  return "partial";
+}
+function eventTransactions(eventId) {
+  return state.transactions.filter((t) => t.eventId === eventId);
+}
+function eventTotals(eventId) {
+  const txns = eventTransactions(eventId);
+  const income = txns.filter((t) => t.type === "Income").reduce((s, t) => s + t.amount, 0);
+  const expense = txns.filter((t) => t.type === "Expense").reduce((s, t) => s + t.amount, 0);
+  return { income, expense, net: income - expense };
+}
+function currentMonthKey() { return monthKey(todayISO()); }
+function monthlyTotals() {
+  const map = new Map();
+  for (const t of state.transactions) {
+    const key = monthKey(t.date);
+    if (!map.has(key)) map.set(key, { key, label: monthLabel(t.date), income: 0, expense: 0 });
+    const row = map.get(key);
+    if (t.type === "Income") row.income += t.amount; else row.expense += t.amount;
+  }
+  return [...map.values()].sort((a, b) => (a.key < b.key ? 1 : -1));
+}
+function openingBalanceBeforeMonth(key) {
+  const opening = (Number(state.openingCash) || 0) + (Number(state.openingBank) || 0);
+  const priorDelta = state.transactions
+    .filter((t) => monthKey(t.date) < key)
+    .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
+  return opening + priorDelta;
+}
+
+/* ---------------- CSV helpers (export) ---------------- */
+function csvEscape(v) {
+  if (v === null || v === undefined) v = "";
+  v = String(v);
+  if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+  return v;
+}
+function rowsToCSV(rows) {
+  return rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+}
+function downloadCSV(filename, rows) {
+  const blob = new Blob([rowsToCSV(rows)], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function txnEventName(t) { return t.eventId ? (eventById(t.eventId)?.name || "") : ""; }
+
+/* ---------------- Rendering ---------------- */
+function renderAll() {
+  document.getElementById("clubNameTitle").textContent = state.clubName || "Club Finance Tracker";
+  document.getElementById("clubNameInput").value = state.clubName || "";
+  document.getElementById("openCash").value = state.openingCash || 0;
+  document.getElementById("openBank").value = state.openingBank || 0;
+
+  refreshStaticSelects();
+  renderOverview();
+  renderMembers();
+  renderTransactions();
+  renderEvents();
+  renderBills();
+}
+
+function refreshStaticSelects() {
+  fillSelect(document.getElementById("tMethod"), PAYMENT_METHODS);
+  fillSelect(document.getElementById("payMethod"), PAYMENT_METHODS);
+  fillSelect(document.getElementById("etMethod"), PAYMENT_METHODS);
+
+  const tEvent = document.getElementById("tEvent");
+  const prev = tEvent.value;
+  tEvent.innerHTML = `<option value="none">None</option>` +
+    state.events.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
+  tEvent.value = [...tEvent.options].some((o) => o.value === prev) ? prev : "none";
+
+  const bEventSelect = document.getElementById("bEventSelect");
+  const prevBillEvent = bEventSelect.value || billDetailGroupKey || "general";
+  bEventSelect.innerHTML = `<option value="general">General (no event)</option>` +
+    state.events.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
+  bEventSelect.value = [...bEventSelect.options].some((o) => o.value === prevBillEvent) ? prevBillEvent : "general";
+}
+
+function statCard(label, value, color) {
+  return `<div class="stat-card ${color}"><div class="label">${label}</div><div class="value">${value}</div></div>`;
+}
+
+function renderOverview() {
+  const cash = accountTotal("Cash");
+  const bank = accountTotal("Bank");
+  const total = cash + bank;
+  const months = monthlyTotals();
+  const thisMonth = months.find((m) => m.key === currentMonthKey()) || { income: 0, expense: 0 };
+  const duesRemaining = totalDuesExpected() - totalDuesPaid();
+
+  document.getElementById("overviewStats").innerHTML = `
+    ${statCard("Cash in Hand", fmt(cash), "green")}
+    ${statCard("Cash in Bank", fmt(bank), "blue")}
+    ${statCard("Total Balance", fmt(total), "blue")}
+    ${statCard("This Month Income", fmt(thisMonth.income), "green")}
+    ${statCard("This Month Expense", fmt(thisMonth.expense), "red")}
+    ${statCard("This Month Net", fmt(thisMonth.income - thisMonth.expense), (thisMonth.income - thisMonth.expense) >= 0 ? "green" : "red")}
+    ${statCard("Outstanding Dues", fmt(duesRemaining), "amber")}
+  `;
+
+  const tbody = document.querySelector("#monthlyTable tbody");
+  tbody.innerHTML = months.map((m) => `
+    <tr>
+      <td>${m.label}</td>
+      <td class="num" style="color:var(--green)">${fmt(m.income)}</td>
+      <td class="num" style="color:var(--red)">${fmt(m.expense)}</td>
+      <td class="num" style="font-weight:600;">${fmt(m.income - m.expense)}</td>
+    </tr>
+  `).join("");
+  document.getElementById("monthlyEmpty").style.display = months.length ? "none" : "block";
+
+  const recent = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 8);
+  const rtbody = document.querySelector("#recentTable tbody");
+  rtbody.innerHTML = recent.map((t) => `
+    <tr>
+      <td>${t.date}</td>
+      <td>${escapeHtml(t.description)}</td>
+      <td>${t.account}</td>
+      <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
+    </tr>
+  `).join("");
+  document.getElementById("recentEmpty").style.display = recent.length ? "none" : "block";
+}
+
+function renderMembers() {
+  const totalMembers = state.members.length;
+  const paidCount = state.members.filter((m) => memberStatus(m) === "paid").length;
+  const partialCount = state.members.filter((m) => memberStatus(m) === "partial").length;
+  const unpaidCount = state.members.filter((m) => memberStatus(m) === "unpaid").length;
+
+  document.getElementById("memberStats").innerHTML = `
+    ${statCard("Total Members", totalMembers, "blue")}
+    ${statCard("Fully Paid", paidCount, "green")}
+    ${statCard("Partially Paid", partialCount, "amber")}
+    ${statCard("Unpaid", unpaidCount, "red")}
+    ${statCard("Dues Collected", fmt(totalDuesPaid()), "green")}
+    ${statCard("Dues Remaining", fmt(totalDuesExpected() - totalDuesPaid()), "red")}
+  `;
+
+  const tbody = document.querySelector("#memberTable tbody");
+  tbody.innerHTML = state.members.map((m) => {
+    const paid = memberPaid(m.id);
+    const remaining = Math.max(m.annualDues - paid, 0);
+    const status = memberStatus(m);
+    return `
+      <tr>
+        <td><button class="link-btn" onclick="openMemberDetail('${m.id}')">${escapeHtml(m.name)}</button></td>
+        <td>${escapeHtml(m.phone || "-")}</td>
+        <td class="num">${fmt(m.annualDues)}</td>
+        <td class="num" style="color:var(--green)">${fmt(paid)}</td>
+        <td class="num" style="color:var(--red)">${fmt(remaining)}</td>
+        <td><span class="badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+        <td style="white-space:nowrap;">
+          ${remaining > 0 ? `<button class="btn small" onclick="openPaymentModal('${m.id}')">Record Payment</button>` : ""}
+          <button class="btn secondary small" onclick="openEditMemberModal('${m.id}')">Edit</button>
+          <button class="btn secondary small" onclick="deleteMember('${m.id}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  document.getElementById("memberEmpty").style.display = state.members.length ? "none" : "block";
+}
+
+function renderTransactions() {
+  const months = monthlyTotals();
+  const filterEl = document.getElementById("monthFilter");
+  const prevValue = filterEl.value || "all";
+  filterEl.innerHTML = `<option value="all">All Months</option>` +
+    months.map((m) => `<option value="${m.key}">${m.label}</option>`).join("");
+  filterEl.value = [...filterEl.options].some((o) => o.value === prevValue) ? prevValue : "all";
+
+  const filterVal = filterEl.value;
+  const summaryBlock = document.getElementById("monthlySummaryBlock");
+
+  if (filterVal === "all") {
+    summaryBlock.style.display = "none";
+  } else {
+    const monthRow = months.find((m) => m.key === filterVal) || { income: 0, expense: 0, label: filterVal };
+    const opening = openingBalanceBeforeMonth(filterVal);
+    const net = monthRow.income - monthRow.expense;
+    const closing = opening + net;
+    document.getElementById("monthlySummaryTitle").textContent = monthRow.label;
+    document.getElementById("monthlySummaryStats").innerHTML = `
+      ${statCard("Total Income", fmt(monthRow.income), "green")}
+      ${statCard("Total Expenses", fmt(monthRow.expense), "red")}
+      ${statCard("Net Change", (net >= 0 ? "+" : "") + fmt(net).replace("Rs ", "Rs "), net >= 0 ? "green" : "red")}
+      ${statCard("Opening Balance", fmt(opening), "blue")}
+      ${statCard("Closing Balance", fmt(closing), "blue")}
+    `;
+    summaryBlock.style.display = "block";
+  }
+
+  const rows = [...state.transactions]
+    .filter((t) => filterVal === "all" || monthKey(t.date) === filterVal)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const tbody = document.querySelector("#txnTable tbody");
+  tbody.innerHTML = rows.map((t) => `
+    <tr>
+      <td>${t.date}</td>
+      <td>${escapeHtml(t.description)}</td>
+      <td>${t.category}</td>
+      <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
+      <td>${escapeHtml(t.paymentMethod || "-")}</td>
+      <td>${txnEventName(t) ? `<span class="badge neutral">${escapeHtml(txnEventName(t))}</span>` : "-"}</td>
+      <td>${escapeHtml(t.notes || "-")}</td>
+      <td><button class="btn secondary small" onclick="deleteTransaction('${t.id}')">Delete</button></td>
+    </tr>
+  `).join("");
+  document.getElementById("txnEmpty").style.display = rows.length ? "none" : "block";
+}
+
+function renderEvents() {
+  const totalBudget = state.events.reduce((s, e) => s + (Number(e.budget) || 0), 0);
+  let totalIncome = 0, totalExpense = 0;
+  state.events.forEach((e) => { const t = eventTotals(e.id); totalIncome += t.income; totalExpense += t.expense; });
+
+  document.getElementById("eventStats").innerHTML = `
+    ${statCard("Total Events", state.events.length, "blue")}
+    ${statCard("Total Budget", fmt(totalBudget), "blue")}
+    ${statCard("Total Actual Income", fmt(totalIncome), "green")}
+    ${statCard("Total Actual Expense", fmt(totalExpense), "red")}
+  `;
+
+  const grid = document.getElementById("eventGrid");
+  grid.innerHTML = state.events.map((e) => {
+    const t = eventTotals(e.id);
+    const budget = Number(e.budget) || 0;
+    const pct = budget > 0 ? Math.min(100, Math.round((t.expense / budget) * 100)) : 0;
+    const over = budget > 0 && t.expense > budget;
+    return `
+      <div class="event-card" onclick="openEventDetail('${e.id}')">
+        <div class="ev-name">${escapeHtml(e.name)}</div>
+        <div class="ev-date">${e.date || "No date set"}</div>
+        <div class="ev-row"><span>Budget</span><span class="num">${fmt(budget)}</span></div>
+        <div class="ev-row"><span>Actual Income</span><span class="num" style="color:var(--green)">${fmt(t.income)}</span></div>
+        <div class="ev-row"><span>Actual Expense</span><span class="num" style="color:var(--red)">${fmt(t.expense)}</span></div>
+        <div class="ev-row"><span>Net</span><span class="num" style="font-weight:700; color:${t.net >= 0 ? "var(--green)" : "var(--red)"}">${fmt(t.net)}</span></div>
+        ${budget > 0 ? `<div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${over ? "var(--red)" : "var(--blue)"}"></div></div>` : ""}
+      </div>
+    `;
+  }).join("");
+  document.getElementById("eventEmpty").style.display = state.events.length ? "none" : "block";
+}
+
+/* ---------------- Bills (organized by event, same as transactions) ---------------- */
+function billGroups() {
+  const groups = state.events.map((e) => ({
+    key: e.id,
+    label: e.name,
+    sub: e.date || "",
+    bills: state.bills.filter((b) => b.eventId === e.id),
+  }));
+  const generalBills = state.bills.filter((b) => !b.eventId);
+  groups.push({ key: "general", label: "General", sub: "Not linked to a specific event", bills: generalBills });
+  return groups;
+}
+function billsForGroup(key) {
+  return key === "general" ? state.bills.filter((b) => !b.eventId) : state.bills.filter((b) => b.eventId === key);
+}
+function billThumbSmall(b) {
+  if (b.fileType && b.fileType.startsWith("image/")) return `<img src="${b.fileData}" alt="" />`;
+  return `<div class="bill-thumb-more">PDF</div>`;
+}
+function billThumbStripHtml(bills) {
+  if (!bills.length) return `<div style="font-size:12px; color:var(--muted);">No bills yet — click to add.</div>`;
+  const shown = bills.slice(0, 4);
+  const extra = bills.length - shown.length;
+  return `<div class="bill-thumb-strip">${shown.map(billThumbSmall).join("")}${extra > 0 ? `<div class="bill-thumb-more">+${extra}</div>` : ""}</div>`;
+}
+
+function renderBills() {
+  const groups = billGroups();
+  const eventsWithBills = groups.filter((g) => g.key !== "general" && g.bills.length > 0).length;
+  const generalCount = (groups.find((g) => g.key === "general") || { bills: [] }).bills.length;
+
+  document.getElementById("billStats").innerHTML = `
+    ${statCard("Total Bills", state.bills.length, "blue")}
+    ${statCard("Events with Bills", eventsWithBills, "green")}
+    ${statCard("Unlinked Bills", generalCount, "amber")}
+  `;
+
+  const grid = document.getElementById("billGrid");
+  grid.innerHTML = groups.map((g) => `
+    <div class="bill-event-card" onclick="openBillDetail('${g.key}')">
+      <div class="be-name">${escapeHtml(g.label)}</div>
+      <div class="be-count">${g.bills.length} bill${g.bills.length === 1 ? "" : "s"}${g.sub ? " • " + escapeHtml(g.sub) : ""}</div>
+      ${billThumbStripHtml(g.bills)}
+    </div>
+  `).join("");
+
+  document.getElementById("billEmpty").style.display = state.events.length === 0 && state.bills.length === 0 ? "block" : "none";
+}
+
+function openBillDetail(key) {
+  billDetailGroupKey = key;
+  let label, sub;
+  if (key === "general") {
+    label = "General Bills";
+    sub = "Not linked to a specific event";
+  } else {
+    const ev = eventById(key);
+    if (!ev) return;
+    label = ev.name;
+    sub = ev.date ? `Event date: ${ev.date}` : "No date set";
+  }
+  document.getElementById("bdName").textContent = label;
+  document.getElementById("bdSub").textContent = sub;
+  document.getElementById("bFile").value = "";
+  document.getElementById("bEventSelect").value = key;
+  document.getElementById("bDate").value = todayISO();
+  document.getElementById("bDesc").value = "";
+  document.getElementById("billUploadNote").textContent = "";
+  renderBillThumbGrid(billsForGroup(key));
+  document.getElementById("billDetailOverlay").classList.add("open");
+}
+function closeBillDetail() {
+  document.getElementById("billDetailOverlay").classList.remove("open");
+  billDetailGroupKey = null;
+}
+function renderBillThumbGrid(bills) {
+  const sorted = [...bills].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const grid = document.getElementById("bdGrid");
+  grid.innerHTML = sorted.map((b) => `
+    <div class="bill-thumb-card">
+      <button class="bill-delete-btn" onclick="deleteBill('${b.id}')" title="Delete">&times;</button>
+      ${b.fileType && b.fileType.startsWith("image/")
+        ? `<img src="${b.fileData}" onclick="viewBillImage('${b.id}')" />`
+        : `<div class="bill-pdf-icon" onclick="viewBillImage('${b.id}')">📄</div>`}
+      <div class="bill-thumb-meta">${b.date}</div>
+      ${b.description ? `<div class="bill-thumb-desc">${escapeHtml(b.description)}</div>` : ""}
+    </div>
+  `).join("");
+  document.getElementById("bdEmpty").style.display = sorted.length ? "none" : "block";
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+// Downscales + re-encodes photos so bill images don't blow up localStorage.
+function compressImageFile(file, maxDim = 1400, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+          else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("billUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fileInput = document.getElementById("bFile");
+  const file = fileInput.files[0];
+  const date = document.getElementById("bDate").value || todayISO();
+  const description = document.getElementById("bDesc").value.trim();
+  const selectedKey = document.getElementById("bEventSelect").value || "general";
+  if (!file) return;
+
+  const btn = document.getElementById("bUploadBtn");
+  const noteEl = document.getElementById("billUploadNote");
+  btn.disabled = true;
+  btn.textContent = "Uploading...";
+  noteEl.textContent = "";
+
+  try {
+    let fileData, fileType;
+    if (file.type === "application/pdf") {
+      fileData = await readFileAsDataURL(file);
+      fileType = "application/pdf";
+    } else {
+      fileData = await compressImageFile(file);
+      fileType = "image/jpeg";
+    }
+    const row = await api.post("/api/bills", {
+      eventId: selectedKey === "general" ? null : selectedKey,
+      fileName: file.name,
+      fileType,
+      fileData,
+      description,
+      date,
+    });
+    state.bills.push(normalizeBill(row));
+    const approxKB = Math.round((fileData.length * 0.75) / 1024);
+    noteEl.textContent = `Uploaded (~${approxKB} KB).`;
+    e.target.reset();
+    document.getElementById("bDate").value = todayISO();
+    document.getElementById("bEventSelect").value = selectedKey;
+    billDetailGroupKey = selectedKey;
+    if (selectedKey === "general") {
+      document.getElementById("bdName").textContent = "General Bills";
+      document.getElementById("bdSub").textContent = "Not linked to a specific event";
+    } else {
+      const ev = eventById(selectedKey);
+      if (ev) {
+        document.getElementById("bdName").textContent = ev.name;
+        document.getElementById("bdSub").textContent = ev.date ? `Event date: ${ev.date}` : "No date set";
+      }
+    }
+    renderAll();
+    renderBillThumbGrid(billsForGroup(selectedKey));
+  } catch (err) {
+    noteEl.textContent = err.message || "Could not upload this file — please try again.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Upload";
+  }
+});
+
+async function deleteBill(id) {
+  if (!confirm("Delete this bill?")) return;
+  try {
+    await api.del(`/api/bills/${id}`);
+    state.bills = state.bills.filter((b) => b.id !== id);
+    renderAll();
+    if (billDetailGroupKey !== null) renderBillThumbGrid(billsForGroup(billDetailGroupKey));
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+function viewBillImage(id) {
+  const b = state.bills.find((x) => x.id === id);
+  if (!b) return;
+  const content = document.getElementById("billLightboxContent");
+  if (b.fileType === "application/pdf") {
+    content.innerHTML = `
+      <div style="background:white; padding:24px; border-radius:10px; text-align:center; max-width:320px;">
+        <div style="font-size:32px; margin-bottom:10px;">📄</div>
+        <p style="margin:0 0 14px; font-size:13px; word-break:break-word;">${escapeHtml(b.fileName)}</p>
+        <a class="btn" href="${b.fileData}" download="${escapeHtml(b.fileName)}">Download PDF</a>
+      </div>`;
+  } else {
+    content.innerHTML = `<img src="${b.fileData}" alt="${escapeHtml(b.description || "")}" />`;
+  }
+  document.getElementById("billLightbox").classList.add("open");
+}
+function closeBillLightbox() {
+  document.getElementById("billLightbox").classList.remove("open");
+}
+
+/* ---------------- Tabs ---------------- */
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+/* ---------------- Category dropdown sync ---------------- */
+function refreshCategoryOptions() {
+  fillSelect(document.getElementById("tCategory"), CATEGORIES[document.getElementById("tType").value]);
+}
+document.getElementById("tType").addEventListener("change", refreshCategoryOptions);
+
+function refreshEventCategoryOptions() {
+  fillSelect(document.getElementById("etCategory"), CATEGORIES[document.getElementById("etType").value]);
+}
+document.getElementById("etType").addEventListener("change", refreshEventCategoryOptions);
+
+/* ---------------- Member form ---------------- */
+document.getElementById("memberForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("mName").value.trim();
+  const phone = document.getElementById("mPhone").value.trim();
+  const dues = Number(document.getElementById("mDues").value);
+  if (!name || !dues) return;
+  try {
+    const row = await api.post("/api/members", { name, phone, annualDues: dues });
+    state.members.push(normalizeMember(row));
+    document.getElementById("memberForm").reset();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+});
+
+async function deleteMember(id) {
+  if (!confirm("Delete this member? Their recorded payment transactions will be kept in the ledger but unlinked from this member.")) return;
+  try {
+    await api.del(`/api/members/${id}`);
+    state.members = state.members.filter((m) => m.id !== id);
+    state.transactions.forEach((t) => { if (t.memberId === id) t.memberId = null; });
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+/* ---------------- Edit member modal ---------------- */
+function openEditMemberModal(memberId) {
+  const m = memberById(memberId);
+  if (!m) return;
+  editMemberTargetId = memberId;
+  document.getElementById("editMName").value = m.name || "";
+  document.getElementById("editMPhone").value = m.phone || "";
+  document.getElementById("editMDues").value = m.annualDues || 0;
+  document.getElementById("editMemberOverlay").classList.add("open");
+}
+function closeEditMemberModal() {
+  document.getElementById("editMemberOverlay").classList.remove("open");
+  editMemberTargetId = null;
+}
+async function submitEditMember() {
+  if (!editMemberTargetId) return;
+  const name = document.getElementById("editMName").value.trim();
+  const phone = document.getElementById("editMPhone").value.trim();
+  const dues = Number(document.getElementById("editMDues").value);
+  if (!name || !dues || dues < 0) { alert("Please enter a valid name and dues amount."); return; }
+  try {
+    const row = await api.put(`/api/members/${editMemberTargetId}`, { name, phone, annualDues: dues });
+    const idx = state.members.findIndex((m) => m.id === editMemberTargetId);
+    if (idx !== -1) state.members[idx] = normalizeMember(row);
+    closeEditMemberModal();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+/* ---------------- Payment modal ---------------- */
+function openPaymentModal(memberId) {
+  paymentTargetMemberId = memberId;
+  const m = memberById(memberId);
+  const remaining = Math.max(m.annualDues - memberPaid(m.id), 0);
+  document.getElementById("paymentMemberName").textContent = `${m.name} — Remaining: ${fmt(remaining)}`;
+  document.getElementById("payAmount").value = remaining;
+  document.getElementById("payDate").value = todayISO();
+  document.getElementById("payNotes").value = "";
+  document.getElementById("paymentOverlay").classList.add("open");
+}
+function closePaymentModal() {
+  document.getElementById("paymentOverlay").classList.remove("open");
+  paymentTargetMemberId = null;
+}
+async function submitPayment() {
+  const amount = Number(document.getElementById("payAmount").value);
+  const date = document.getElementById("payDate").value || todayISO();
+  const account = document.getElementById("payAccount").value;
+  const method = document.getElementById("payMethod").value;
+  const notes = document.getElementById("payNotes").value.trim();
+  if (!amount || amount <= 0 || !paymentTargetMemberId) return;
+
+  const m = memberById(paymentTargetMemberId);
+  try {
+    const row = await api.post("/api/transactions", {
+      date, description: `Membership dues — ${m.name}`,
+      type: "Income", category: "Membership Dues", account, amount,
+      paymentMethod: method, notes, memberId: m.id, eventId: null,
+    });
+    state.transactions.push(normalizeTransaction(row));
+    closePaymentModal();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+/* ---------------- Member detail modal ---------------- */
+function openMemberDetail(memberId) {
+  memberDetailId = memberId;
+  const m = memberById(memberId);
+  if (!m) return;
+  document.getElementById("mdName").textContent = m.name;
+  document.getElementById("mdContact").textContent = m.phone ? `Phone: ${m.phone}` : "No phone on file";
+
+  const paid = memberPaid(m.id);
+  const remaining = Math.max(m.annualDues - paid, 0);
+  document.getElementById("mdStats").innerHTML = `
+    ${statCard("Annual Dues", fmt(m.annualDues), "blue")}
+    ${statCard("Total Paid", fmt(paid), "green")}
+    ${statCard("Remaining", fmt(remaining), remaining > 0 ? "red" : "green")}
+    ${statCard("Status", memberStatus(m).charAt(0).toUpperCase() + memberStatus(m).slice(1), "amber")}
+  `;
+
+  const txns = memberTransactions(m.id)
+    .filter((t) => t.type === "Income")
+    .sort((a, b) => new Date(a.date) - new Date(b.date) || (a.id > b.id ? 1 : -1));
+
+  let running = 0;
+  const tbody = document.querySelector("#mdTable tbody");
+  tbody.innerHTML = txns.map((t) => {
+    running += t.amount;
+    const remAfter = Math.max(m.annualDues - running, 0);
+    return `
+      <tr>
+        <td>${t.date}</td>
+        <td class="num" style="color:var(--green)">${fmt(t.amount)}</td>
+        <td>${escapeHtml(t.paymentMethod || "-")}</td>
+        <td>${escapeHtml(t.notes || "-")}</td>
+        <td class="num">${fmt(running)}</td>
+        <td class="num">${fmt(remAfter)}</td>
+      </tr>
+    `;
+  }).join("");
+  document.getElementById("mdEmpty").style.display = txns.length ? "none" : "block";
+  document.getElementById("mdExportBtn").onclick = () => exportSingleMemberCSV(m.id);
+
+  document.getElementById("memberDetailOverlay").classList.add("open");
+}
+function closeMemberDetail() {
+  document.getElementById("memberDetailOverlay").classList.remove("open");
+  memberDetailId = null;
+}
+
+/* ---------------- Transaction form ---------------- */
+document.getElementById("txnForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const date = document.getElementById("tDate").value;
+  const description = document.getElementById("tDesc").value.trim();
+  const type = document.getElementById("tType").value;
+  const category = document.getElementById("tCategory").value;
+  const account = document.getElementById("tAccount").value;
+  const amount = Number(document.getElementById("tAmount").value);
+  const paymentMethod = document.getElementById("tMethod").value;
+  const eventVal = document.getElementById("tEvent").value;
+  const notes = document.getElementById("tNotes").value.trim();
+  if (!date || !description || !amount) return;
+
+  try {
+    const row = await api.post("/api/transactions", {
+      date, description, type, category, account, amount,
+      paymentMethod, notes, memberId: null, eventId: eventVal === "none" ? null : eventVal,
+    });
+    state.transactions.push(normalizeTransaction(row));
+    document.getElementById("txnForm").reset();
+    document.getElementById("tDate").value = todayISO();
+    refreshCategoryOptions();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+});
+
+async function deleteTransaction(id) {
+  if (!confirm("Delete this transaction?")) return;
+  try {
+    await api.del(`/api/transactions/${id}`);
+    state.transactions = state.transactions.filter((t) => t.id !== id);
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+document.getElementById("monthFilter").addEventListener("change", renderTransactions);
+
+/* ---------------- Events ---------------- */
+document.getElementById("eventForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("eName").value.trim();
+  const date = document.getElementById("eDate").value;
+  const budget = Number(document.getElementById("eBudget").value) || 0;
+  const expectedIncome = Number(document.getElementById("eExpIncome").value) || 0;
+  const expectedExpense = Number(document.getElementById("eExpExpense").value) || 0;
+  const notes = document.getElementById("eNotes").value.trim();
+  if (!name) return;
+  try {
+    const row = await api.post("/api/events", { name, date, budget, expectedIncome, expectedExpense, notes });
+    state.events.push(normalizeEvent(row));
+    document.getElementById("eventForm").reset();
+    document.getElementById("eDate").value = todayISO();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+});
+
+function openEventDetail(eventId) {
+  eventDetailId = eventId;
+  const ev = eventById(eventId);
+  if (!ev) return;
+  document.getElementById("edName").textContent = ev.name;
+  document.getElementById("edDate").textContent = ev.date ? `Event date: ${ev.date}` : "No date set";
+
+  const t = eventTotals(ev.id);
+  const budget = Number(ev.budget) || 0;
+  const remainingBudget = budget - t.expense;
+  document.getElementById("edStats").innerHTML = `
+    ${statCard("Budget", fmt(budget), "blue")}
+    ${statCard("Expected Income", fmt(ev.expectedIncome || 0), "blue")}
+    ${statCard("Expected Expense", fmt(ev.expectedExpense || 0), "blue")}
+    ${statCard("Actual Income", fmt(t.income), "green")}
+    ${statCard("Actual Expense", fmt(t.expense), "red")}
+    ${statCard("Net Balance", fmt(t.net), t.net >= 0 ? "green" : "red")}
+    ${statCard(remainingBudget >= 0 ? "Remaining Budget" : "Over Budget By", fmt(Math.abs(remainingBudget)), remainingBudget >= 0 ? "green" : "red")}
+  `;
+  document.getElementById("edNotesWrap").textContent = ev.notes ? `Notes: ${ev.notes}` : "";
+
+  refreshEventCategoryOptions();
+  fillSelect(document.getElementById("etMethod"), PAYMENT_METHODS);
+  document.getElementById("etDate").value = todayISO();
+
+  renderEventTransactionTable(ev.id);
+  document.getElementById("edExportBtn").onclick = () => exportEventReportCSV(ev.id);
+  document.getElementById("edDeleteBtn").onclick = () => deleteEvent(ev.id);
+
+  document.getElementById("eventDetailOverlay").classList.add("open");
+}
+function closeEventDetail() {
+  document.getElementById("eventDetailOverlay").classList.remove("open");
+  eventDetailId = null;
+}
+function renderEventTransactionTable(eventId) {
+  const rows = eventTransactions(eventId).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const tbody = document.querySelector("#edTable tbody");
+  tbody.innerHTML = rows.map((t) => `
+    <tr>
+      <td>${t.date}</td>
+      <td>${escapeHtml(t.description)}</td>
+      <td>${t.category}</td>
+      <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
+      <td>${escapeHtml(t.paymentMethod || "-")}</td>
+      <td>${escapeHtml(t.notes || "-")}</td>
+      <td><button class="btn secondary small" onclick="deleteEventTransaction('${t.id}')">Delete</button></td>
+    </tr>
+  `).join("");
+  document.getElementById("edEmpty").style.display = rows.length ? "none" : "block";
+}
+async function deleteEventTransaction(id) {
+  if (!confirm("Delete this transaction?")) return;
+  try {
+    await api.del(`/api/transactions/${id}`);
+    state.transactions = state.transactions.filter((t) => t.id !== id);
+    renderAll();
+    if (eventDetailId) openEventDetail(eventDetailId);
+  } catch (err) {
+    notifyError(err);
+  }
+}
+async function deleteEvent(eventId) {
+  if (!confirm("Delete this event? Its transactions and bills will be kept but unlinked from the event (bills will move to General).")) return;
+  try {
+    await api.del(`/api/events/${eventId}`);
+    state.events = state.events.filter((e) => e.id !== eventId);
+    state.transactions.forEach((t) => { if (t.eventId === eventId) t.eventId = null; });
+    state.bills.forEach((b) => { if (b.eventId === eventId) b.eventId = null; });
+    closeEventDetail();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+document.getElementById("eventTxnForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!eventDetailId) return;
+  const date = document.getElementById("etDate").value;
+  const description = document.getElementById("etDesc").value.trim();
+  const type = document.getElementById("etType").value;
+  const category = document.getElementById("etCategory").value;
+  const account = document.getElementById("etAccount").value;
+  const amount = Number(document.getElementById("etAmount").value);
+  const paymentMethod = document.getElementById("etMethod").value;
+  const notes = document.getElementById("etNotes").value.trim();
+  if (!date || !description || !amount) return;
+
+  try {
+    const row = await api.post("/api/transactions", {
+      date, description, type, category, account, amount,
+      paymentMethod, notes, memberId: null, eventId: eventDetailId,
+    });
+    state.transactions.push(normalizeTransaction(row));
+    document.getElementById("eventTxnForm").reset();
+    document.getElementById("etDate").value = todayISO();
+    refreshEventCategoryOptions();
+    renderAll();
+    openEventDetail(eventDetailId);
+  } catch (err) {
+    notifyError(err);
+  }
+});
+
+/* ---------------- Settings ---------------- */
+async function saveClubName() {
+  const clubName = document.getElementById("clubNameInput").value.trim() || "Club Finance Tracker";
+  try {
+    const row = await api.put("/api/settings", { clubName });
+    Object.assign(state, normalizeSettings(row));
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+async function saveOpeningBalances() {
+  const openingCash = Number(document.getElementById("openCash").value) || 0;
+  const openingBank = Number(document.getElementById("openBank").value) || 0;
+  try {
+    const row = await api.put("/api/settings", { openingCash, openingBank });
+    Object.assign(state, normalizeSettings(row));
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+/* ---------------- Backup (snapshot download) ---------------- */
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `club-finance-backup-${todayISO()}.json`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- CSV Reports (export) ---------------- */
+function exportMembersSummaryCSV() {
+  const rows = [["Member ID", "Name", "Phone", "Annual Dues", "Paid", "Remaining", "Status"]];
+  state.members.forEach((m) => {
+    const paid = memberPaid(m.id);
+    rows.push([m.id, m.name, m.phone || "", m.annualDues, paid, Math.max(m.annualDues - paid, 0), memberStatus(m)]);
+  });
+  downloadCSV(`membership-summary-${todayISO()}.csv`, rows);
+}
+
+function exportMembersHistoryCSV() {
+  const rows = [["Member Name", "Date", "Amount", "Payment Method", "Account", "Notes"]];
+  state.members.forEach((m) => {
+    memberTransactions(m.id)
+      .filter((t) => t.type === "Income")
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .forEach((t) => rows.push([m.name, t.date, t.amount, t.paymentMethod || "", t.account, t.notes || ""]));
+  });
+  downloadCSV(`membership-payment-history-${todayISO()}.csv`, rows);
+}
+
+function exportSingleMemberCSV(memberId) {
+  const m = memberById(memberId);
+  if (!m) return;
+  const rows = [
+    [`Payment History — ${m.name}`],
+    ["Annual Dues", m.annualDues],
+    ["Total Paid", memberPaid(m.id)],
+    ["Remaining", Math.max(m.annualDues - memberPaid(m.id), 0)],
+    ["Status", memberStatus(m)],
+    [],
+    ["Date", "Amount", "Payment Method", "Account", "Notes", "Running Total"],
+  ];
+  let running = 0;
+  memberTransactions(m.id)
+    .filter((t) => t.type === "Income")
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach((t) => { running += t.amount; rows.push([t.date, t.amount, t.paymentMethod || "", t.account, t.notes || "", running]); });
+  downloadCSV(`member-${m.name.replace(/\s+/g, "-").toLowerCase()}-history-${todayISO()}.csv`, rows);
+}
+
+function exportMonthlyReportCSV() {
+  const key = document.getElementById("monthFilter").value;
+  if (key === "all") { alert("Select a specific month from the dropdown first."); return; }
+  const months = monthlyTotals();
+  const monthRow = months.find((m) => m.key === key) || { income: 0, expense: 0, label: key };
+  const opening = openingBalanceBeforeMonth(key);
+  const net = monthRow.income - monthRow.expense;
+  const closing = opening + net;
+
+  const rows = [
+    [`Monthly Financial Report — ${monthRow.label}`],
+    ["Opening Balance", opening],
+    ["Total Income", monthRow.income],
+    ["Total Expenses", monthRow.expense],
+    ["Net Change", net],
+    ["Closing Balance", closing],
+    [],
+    ["Date", "Description", "Category", "Type", "Amount", "Payment Method", "Event", "Notes"],
+  ];
+  state.transactions
+    .filter((t) => monthKey(t.date) === key)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach((t) => rows.push([t.date, t.description, t.category, t.type, t.amount, t.paymentMethod || "", txnEventName(t), t.notes || ""]));
+
+  downloadCSV(`monthly-report-${key}.csv`, rows);
+}
+
+function exportAllTransactionsCSV() {
+  const rows = [["Date", "Description", "Category", "Type", "Account", "Amount", "Payment Method", "Event", "Notes"]];
+  [...state.transactions].sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach((t) => rows.push([t.date, t.description, t.category, t.type, t.account, t.amount, t.paymentMethod || "", txnEventName(t), t.notes || ""]));
+  downloadCSV(`all-transactions-${todayISO()}.csv`, rows);
+}
+
+function exportEventReportCSV(eventId) {
+  const ev = eventById(eventId);
+  if (!ev) return;
+  const t = eventTotals(ev.id);
+  const budget = Number(ev.budget) || 0;
+  const rows = [
+    [`Event Financial Report — ${ev.name}`],
+    ["Event Date", ev.date || ""],
+    ["Budget", budget],
+    ["Expected Income", ev.expectedIncome || 0],
+    ["Expected Expense", ev.expectedExpense || 0],
+    ["Actual Income", t.income],
+    ["Actual Expense", t.expense],
+    ["Net Balance", t.net],
+    [budget - t.expense >= 0 ? "Remaining Budget" : "Over Budget By", Math.abs(budget - t.expense)],
+    ["Notes", ev.notes || ""],
+    [],
+    ["Date", "Description", "Category", "Type", "Amount", "Payment Method", "Notes"],
+  ];
+  eventTransactions(ev.id)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach((tx) => rows.push([tx.date, tx.description, tx.category, tx.type, tx.amount, tx.paymentMethod || "", tx.notes || ""]));
+  downloadCSV(`event-report-${ev.name.replace(/\s+/g, "-").toLowerCase()}-${todayISO()}.csv`, rows);
+}
+
+/* =========================================================
+   CSV IMPORT — read a CSV of transactions (bank export, an
+   event's income/expense sheet, a month's records, etc.),
+   auto-detect the columns, let the user confirm/adjust the
+   mapping, preview the result, then bulk-add as transactions.
+   ========================================================= */
+
+let csvHeaders = [];
+let csvDataRows = [];
+let csvParsedTxns = [];
+
+// Minimal RFC4180-ish CSV parser: handles quoted fields, escaped quotes,
+// commas/newlines inside quotes, and CRLF/LF line endings.
+function parseCSVText(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field); field = "";
+    } else if (c === "\n") {
+      row.push(field); rows.push(row); row = []; field = "";
+    } else if (c === "\r") {
+      // ignore, \n (if present) will terminate the row
+    } else {
+      field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((c) => String(c).trim() !== ""));
+}
+
+function parseAmountValue(v) {
+  if (v === undefined || v === null) return NaN;
+  let s = String(v).trim();
+  if (!s) return NaN;
+  let neg = false;
+  if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+  if (/^-/.test(s)) neg = true;
+  s = s.replace(/[^0-9.]/g, "");
+  if (!s) return NaN;
+  let n = parseFloat(s);
+  if (isNaN(n)) return NaN;
+  return neg ? -n : n;
+}
+
+function normalizeDateValue(v) {
+  if (!v) return null;
+  v = String(v).trim();
+  if (!v) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  const m = v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    let day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+    if (year < 100) year += 2000;
+    if (month > 12 && day <= 12) { const tmp = day; day = month; month = tmp; }
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+  const d = new Date(v);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return null;
+}
+
+function openCsvImportModal() {
+  csvHeaders = []; csvDataRows = []; csvParsedTxns = [];
+  document.getElementById("csvFileInput").value = "";
+  document.getElementById("csvMappingSection").style.display = "none";
+  document.getElementById("csvImportConfirmBtn").disabled = true;
+  document.getElementById("csvPreviewNote").textContent = "";
+  const evSel = document.getElementById("csvDefaultEvent");
+  evSel.innerHTML = `<option value="none">None</option>` +
+    state.events.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
+  document.getElementById("csvImportOverlay").classList.add("open");
+}
+function closeCsvImport() {
+  document.getElementById("csvImportOverlay").classList.remove("open");
+}
+
+function csvColumnOptions(noneLabel) {
+  return `<option value="__none__">${noneLabel || "None"}</option>` +
+    csvHeaders.map((h, i) => `<option value="${i}">${escapeHtml(h)}</option>`).join("");
+}
+
+function populateCsvMapping() {
+  document.getElementById("mapDate").innerHTML = csvColumnOptions("Select column");
+  document.getElementById("mapDesc").innerHTML = csvColumnOptions("Select column");
+  document.getElementById("mapType").innerHTML = csvColumnOptions("(none — infer from amount sign)");
+  document.getElementById("mapAmount").innerHTML = csvColumnOptions("(none — use separate income/expense cols)");
+  document.getElementById("mapIncome").innerHTML = csvColumnOptions();
+  document.getElementById("mapExpense").innerHTML = csvColumnOptions();
+  document.getElementById("mapCategory").innerHTML = csvColumnOptions();
+  document.getElementById("mapAccount").innerHTML = csvColumnOptions();
+  document.getElementById("mapMethod").innerHTML = csvColumnOptions();
+  document.getElementById("mapNotes").innerHTML = csvColumnOptions();
+
+  const find = (keywords) => {
+    for (let i = 0; i < csvHeaders.length; i++) {
+      const h = csvHeaders[i].toLowerCase();
+      if (keywords.some((k) => h.includes(k))) return String(i);
+    }
+    return "__none__";
+  };
+
+  document.getElementById("mapDate").value = find(["date"]);
+  document.getElementById("mapDesc").value = find(["desc", "narration", "particular", "memo", "detail", "item"]);
+  document.getElementById("mapType").value = find(["type"]);
+  document.getElementById("mapCategory").value = find(["categor"]);
+  document.getElementById("mapAccount").value = find(["account"]);
+  document.getElementById("mapMethod").value = find(["method", "mode"]);
+  document.getElementById("mapNotes").value = find(["note", "remark", "reference", "ref"]);
+
+  const incomeGuess = find(["income", "credit", "deposit", "received"]);
+  const expenseGuess = find(["expense", "debit", "withdraw", "paid out", "spent"]);
+  const amountGuess = find(["amount"]);
+
+  if (incomeGuess !== "__none__" && expenseGuess !== "__none__" && incomeGuess !== expenseGuess) {
+    document.getElementById("mapIncome").value = incomeGuess;
+    document.getElementById("mapExpense").value = expenseGuess;
+    document.getElementById("mapAmount").value = "__none__";
+  } else {
+    document.getElementById("mapAmount").value = amountGuess;
+    document.getElementById("mapIncome").value = "__none__";
+    document.getElementById("mapExpense").value = "__none__";
+  }
+
+  [
+    "mapDate", "mapDesc", "mapType", "mapAmount", "mapIncome", "mapExpense",
+    "mapCategory", "mapAccount", "mapMethod", "mapNotes",
+  ].forEach((id) => document.getElementById(id).addEventListener("change", updateCsvPreview));
+}
+
+function mappedVal(row, selectId) {
+  const idx = document.getElementById(selectId).value;
+  if (idx === "__none__") return "";
+  return (row[Number(idx)] || "").toString().trim();
+}
+
+function buildCsvTransactions() {
+  const defaultAccount = document.getElementById("csvDefaultAccount").value;
+  const useSplitCols = document.getElementById("mapIncome").value !== "__none__" ||
+    document.getElementById("mapExpense").value !== "__none__";
+  const useAmountCol = document.getElementById("mapAmount").value !== "__none__";
+  const results = [];
+  let skipped = 0;
+
+  csvDataRows.forEach((row) => {
+    const date = normalizeDateValue(mappedVal(row, "mapDate"));
+    const description = mappedVal(row, "mapDesc") || "Imported transaction";
+    let type = "", amount = NaN;
+
+    if (useSplitCols) {
+      const inc = parseAmountValue(mappedVal(row, "mapIncome"));
+      const exp = parseAmountValue(mappedVal(row, "mapExpense"));
+      if (!isNaN(inc) && inc > 0) { type = "Income"; amount = inc; }
+      else if (!isNaN(exp) && exp !== 0) { type = "Expense"; amount = Math.abs(exp); }
+    } else if (useAmountCol) {
+      const rawAmount = parseAmountValue(mappedVal(row, "mapAmount"));
+      const rawType = mappedVal(row, "mapType").toLowerCase();
+      if (!isNaN(rawAmount) && rawAmount !== 0) {
+        if (rawType) {
+          type = (rawType.includes("in") || rawType.includes("credit")) ? "Income" : "Expense";
+        } else {
+          type = rawAmount < 0 ? "Expense" : "Income";
+        }
+        amount = Math.abs(rawAmount);
+      }
+    }
+
+    if (!date || !type || !amount || isNaN(amount) || amount <= 0) { skipped++; return; }
+
+    let category = mappedVal(row, "mapCategory");
+    if (!category) category = type === "Income" ? "Other Income" : "Other Expense";
+
+    let account = mappedVal(row, "mapAccount");
+    const accLower = account.toLowerCase();
+    if (accLower.includes("bank")) account = "Bank";
+    else if (accLower.includes("cash")) account = "Cash";
+    else account = defaultAccount;
+
+    const paymentMethod = mappedVal(row, "mapMethod");
+    const notes = mappedVal(row, "mapNotes");
+
+    results.push({ date, description, type, category, account, amount, paymentMethod, notes });
+  });
+
+  return { results, skipped };
+}
+
+function updateCsvPreview() {
+  const { results, skipped } = buildCsvTransactions();
+  csvParsedTxns = results;
+
+  const income = results.filter((t) => t.type === "Income").reduce((s, t) => s + t.amount, 0);
+  const expense = results.filter((t) => t.type === "Expense").reduce((s, t) => s + t.amount, 0);
+  document.getElementById("csvPreviewCount").textContent = results.length;
+  document.getElementById("csvPreviewIncome").textContent = fmt(income);
+  document.getElementById("csvPreviewExpense").textContent = fmt(expense);
+
+  const tbody = document.querySelector("#csvPreviewTable tbody");
+  tbody.innerHTML = results.slice(0, 15).map((t) => `
+    <tr>
+      <td>${t.date}</td>
+      <td>${escapeHtml(t.description)}</td>
+      <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td>${escapeHtml(t.category)}</td>
+      <td>${t.account}</td>
+      <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${fmt(t.amount)}</td>
+    </tr>
+  `).join("");
+
+  let msg = results.length > 15 ? `Showing first 15 of ${results.length} rows to import. ` : "";
+  if (skipped) msg += `${skipped} row(s) couldn't be read (missing/invalid date, amount, or type) and will be skipped.`;
+  if (!results.length && !skipped) msg = "No rows detected yet — check the column mapping above.";
+  document.getElementById("csvPreviewNote").textContent = msg;
+  document.getElementById("csvImportConfirmBtn").disabled = results.length === 0;
+}
+
+document.getElementById("csvFileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const table = parseCSVText(String(reader.result));
+    if (!table.length) { alert("Could not find any rows in this file."); return; }
+    csvHeaders = table[0].map((h) => String(h).trim());
+    csvDataRows = table.slice(1);
+    if (!csvDataRows.length) { alert("No data rows found below the header row."); return; }
+    populateCsvMapping();
+    document.getElementById("csvMappingSection").style.display = "block";
+    updateCsvPreview();
+  };
+  reader.readAsText(file);
+});
+
+async function confirmCsvImport() {
+  if (!csvParsedTxns.length) return;
+  const eventVal = document.getElementById("csvDefaultEvent").value;
+  const eventId = eventVal === "none" ? null : eventVal;
+
+  const payload = csvParsedTxns.map((t) => ({
+    date: t.date, description: t.description, type: t.type,
+    category: t.category, account: t.account, amount: t.amount,
+    paymentMethod: t.paymentMethod, notes: t.notes, memberId: null, eventId,
+  }));
+
+  const btn = document.getElementById("csvImportConfirmBtn");
+  btn.disabled = true;
+  btn.textContent = "Importing...";
+  try {
+    const data = await api.post("/api/transactions/bulk", { transactions: payload });
+    (data.transactions || []).forEach((row) => state.transactions.push(normalizeTransaction(row)));
+    const count = data.count || payload.length;
+    closeCsvImport();
+    renderAll();
+    alert(`Imported ${count} transaction(s) successfully.`);
+  } catch (err) {
+    notifyError(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Import Transactions";
+  }
+}
+
+/* ---------------- Init ---------------- */
+document.getElementById("tDate").value = todayISO();
+document.getElementById("eDate").value = todayISO();
+refreshCategoryOptions();
+refreshEventCategoryOptions();
+
+// If a token is already stored (returning visit), try to use it straight
+// away; otherwise show the sign-in screen. bootApp() itself falls back to
+// the auth screen if the token turns out to be invalid/expired.
+if (getAuth() && getAuth().token) {
+  bootApp();
+} else {
+  showAuthScreen("");
+}
+
+</script>
+</body>
+</html>
