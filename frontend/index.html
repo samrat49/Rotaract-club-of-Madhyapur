@@ -728,18 +728,43 @@ let billDetailGroupKey = null; // event id, or "general" for unlinked bills
 
 /* =========================================================
    AUTH + API CLIENT
-   The frontend is served by the same Express app as the API (see
-   backend/index.js), so requests use relative paths and share the
-   origin — no CORS or base-URL configuration needed in production.
+   The frontend and backend are deployed separately in production.
+   Local development continues to use the local Express backend, while
+   the deployed frontend uses the production Vercel backend.
+
+   IMPORTANT: This only changes where API requests are sent. It does not
+   change the PostgreSQL configuration. PostgreSQL is configured by the
+   backend through DATABASE_URL, so the local database remains untouched.
    ========================================================= */
 
 const AUTH_KEY = "cft-auth-v1";
+
+// Backend URLs for each environment.
+// Keep the local URL pointed at your existing local backend so your
+// existing local PostgreSQL database continues to work unchanged.
+const API_CONFIG = {
+  local: "http://localhost:4000",
+  production: "https://rotaract-club-of-madhyapur-3n78.vercel.app",
+};
 
 function getAuth() {
   try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); } catch (e) { return null; }
 }
 function setAuth(auth) { localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); }
 function clearAuth() { localStorage.removeItem(AUTH_KEY); }
+
+function getApiBaseUrl() {
+  const hostname = window.location.hostname;
+
+  // Local development: use the existing local Express backend.
+  // This keeps the current local PostgreSQL setup completely unchanged.
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return API_CONFIG.local;
+  }
+
+  // Production / Vercel: use the separately deployed backend.
+  return API_CONFIG.production;
+}
 
 // Wraps fetch() with the auth header, JSON handling, and a consistent
 // error shape. Throws an Error with a human-readable message on failure.
@@ -748,9 +773,13 @@ async function apiFetch(path, options = {}) {
   const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
   if (auth && auth.token) headers["Authorization"] = `Bearer ${auth.token}`;
 
+  const baseUrl = getApiBaseUrl();
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const requestUrl = `${baseUrl}${cleanPath}`;
+
   let res;
   try {
-    res = await fetch(path, Object.assign({}, options, { headers }));
+    res = await fetch(requestUrl, Object.assign({}, options, { headers }));
   } catch (err) {
     throw new Error("Could not reach the server. Check your connection and try again.");
   }
