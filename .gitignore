@@ -19,3 +19,6 @@ build/
 
 # Vite
 .vite/
+
+# Database backups
+backend/*.sql

@@ -1,11 +1,8 @@
 const { Pool, types } = require("pg");
 
-// By default node-postgres parses DATE columns into JS Date objects,
-// which can be re-interpreted in local time and shift by a day.
-// Keep DATE columns as plain "YYYY-MM-DD" strings for the frontend.
+// Keep PostgreSQL DATE columns as plain YYYY-MM-DD strings.
 types.setTypeParser(1082, (val) => val);
 
-// PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl:
@@ -13,6 +10,16 @@ const pool = new Pool({
     process.env.DATABASE_URL.includes("localhost")
       ? false
       : { rejectUnauthorized: false },
+});
+
+// Neon pooled connections don't accept search_path as a startup option.
+// Set it after each connection is established.
+pool.on("connect", async (client) => {
+  try {
+    await client.query("SET search_path TO public");
+  } catch (err) {
+    console.error("SEARCH PATH ERROR:", err.message);
+  }
 });
 
 // Check which database the backend is actually connected to.
