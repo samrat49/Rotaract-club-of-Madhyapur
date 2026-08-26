@@ -3,31 +3,148 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Club Finance Tracker</title>
+<title>Rotaract Club of Madhyapur Finance Tracker</title>
+<link rel="icon" type="image/png" href="logo.png" />
+<script>
+  // Applied as early as possible (before the CSS below paints) so a saved
+  // Light/Dark choice never flashes the OS-preferred theme first.
+  (function () {
+    try {
+      var t = localStorage.getItem("theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --blue: #2563eb;
-    --blue-dark: #1d4ed8;
+    --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    --blue: #4f46e5;
+    --blue-dark: #4338ca;
+    --blue-light: #eef1ff;
     --green: #059669;
+    --green-light: #ecfdf5;
     --red: #dc2626;
+    --red-light: #fef2f2;
     --amber: #d97706;
-    --bg: #f4f6fb;
+    --amber-light: #fffbeb;
+
+    --bg: #f5f6fb;
     --card: #ffffff;
-    --border: #e2e8f0;
+    --input-bg: #ffffff;
+    --surface-2: #f1f3f9;
+    --border: #e6e8f2;
     --text: #0f172a;
     --muted: #64748b;
+
+    --radius-sm: 9px;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --shadow: 0 6px 20px -6px rgba(15, 23, 42, 0.10), 0 2px 8px -2px rgba(15, 23, 42, 0.05);
+    --shadow-lg: 0 24px 48px -16px rgba(15, 23, 42, 0.28);
+    --ring: rgba(79, 70, 229, 0.28);
+
+    color-scheme: light;
   }
+
+  /* Dark theme tokens apply automatically when the OS/browser prefers dark
+     (unless the user explicitly picked Light in Settings), and always when
+     the user explicitly picked Dark — see setTheme() in the script below,
+     which toggles [data-theme] on <html>. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --blue: #818cf8;
+      --blue-dark: #6366f1;
+      --blue-light: rgba(129, 140, 248, 0.14);
+      --green: #34d399;
+      --green-light: rgba(52, 211, 153, 0.12);
+      --red: #f87171;
+      --red-light: rgba(248, 113, 113, 0.12);
+      --amber: #fbbf24;
+      --amber-light: rgba(251, 191, 36, 0.12);
+
+      --bg: #0a0b12;
+      --card: #14151f;
+      --input-bg: #1a1c29;
+      --surface-2: #1c1e2b;
+      --border: #262837;
+      --text: #f1f5f9;
+      --muted: #9398ac;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+      --ring: rgba(129, 140, 248, 0.35);
+
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --blue: #818cf8;
+    --blue-dark: #6366f1;
+    --blue-light: rgba(129, 140, 248, 0.14);
+    --green: #34d399;
+    --green-light: rgba(52, 211, 153, 0.12);
+    --red: #f87171;
+    --red-light: rgba(248, 113, 113, 0.12);
+    --amber: #fbbf24;
+    --amber-light: rgba(251, 191, 36, 0.12);
+
+    --bg: #0a0b12;
+    --card: #14151f;
+    --input-bg: #1a1c29;
+    --surface-2: #1c1e2b;
+    --border: #262837;
+    --text: #f1f5f9;
+    --muted: #9398ac;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+    --ring: rgba(129, 140, 248, 0.35);
+
+    color-scheme: dark;
+  }
+
   * { box-sizing: border-box; }
+  ::selection { background: var(--blue); color: white; }
+
+  html { scrollbar-color: var(--border) transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
+    font-family: var(--font-sans);
+    background:
+      radial-gradient(760px 380px at 8% -8%, var(--blue-light), transparent 60%),
+      radial-gradient(620px 320px at 100% 0%, var(--green-light), transparent 55%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background-color .2s ease, color .2s ease;
   }
+
+  a { color: var(--blue); }
+  h1, h2, h3 { font-family: var(--font-sans); letter-spacing: -0.01em; }
+
+  button, input, select, textarea { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+
   header {
-    background: var(--card);
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
     border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
+    padding: 14px 22px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -37,200 +154,328 @@
     top: 0;
     z-index: 10;
   }
-  header h1 { font-size: 18px; margin: 0; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 42px; height: 42px; border-radius: 11px; flex: none;
+    background: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 3px; box-shadow: var(--shadow);
+  }
+  .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 8px; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 800; }
   header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   nav {
     display: flex;
-    gap: 4px;
-    background: var(--card);
+    gap: 2px;
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
     border-bottom: 1px solid var(--border);
-    padding: 0 20px;
+    padding: 8px 22px;
     overflow-x: auto;
+    position: sticky;
+    top: 66px;
+    z-index: 9;
+    scrollbar-width: none;
   }
+  nav::-webkit-scrollbar { display: none; }
   nav button {
     background: none;
     border: none;
-    padding: 12px 16px;
-    font-size: 14px;
-    font-weight: 500;
+    padding: 9px 15px;
+    font-size: 13.5px;
+    font-weight: 600;
     color: var(--muted);
     cursor: pointer;
-    border-bottom: 2px solid transparent;
+    border-radius: 999px;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
   }
-  nav button.active { color: var(--blue); border-bottom-color: var(--blue); }
+  nav button:hover { color: var(--text); background: var(--surface-2); }
+  nav button.active {
+    color: white;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    box-shadow: 0 4px 14px -3px var(--ring);
+  }
+  .tab-icon {
+    width: 15px; height: 15px; flex: none;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
 
-  main { max-width: 1080px; margin: 0 auto; padding: 20px; }
-  .tab { display: none; }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 22px 60px; }
+  .tab { display: none; animation: fadeUp .28s ease; }
   .tab.active { display: block; }
 
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
   }
-  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-  .stat-card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-  .stat-card .value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-card {
+    position: relative; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 17px 15px; overflow: hidden;
+    box-shadow: var(--shadow-sm); transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .stat-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+    background: var(--muted); opacity: .35;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .stat-card .label { font-size: 11.5px; color: var(--muted); margin-bottom: 7px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .stat-card .value { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
   .stat-card.green .value { color: var(--green); }
+  .stat-card.green::before { background: var(--green); opacity: 1; }
   .stat-card.red .value { color: var(--red); }
+  .stat-card.red::before { background: var(--red); opacity: 1; }
   .stat-card.blue .value { color: var(--blue); }
+  .stat-card.blue::before { background: var(--blue); opacity: 1; }
   .stat-card.amber .value { color: var(--amber); }
+  .stat-card.amber::before { background: var(--amber); opacity: 1; }
 
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    margin-bottom: 22px; overflow: hidden; box-shadow: var(--shadow-sm);
+  }
   .card-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
+    padding: 15px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
+    background: color-mix(in srgb, var(--surface-2) 55%, transparent);
   }
-  .card-header h2 { font-size: 15px; margin: 0; }
+  .card-header h2 { font-size: 14.5px; margin: 0; font-weight: 700; }
   .card-header .header-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .card-body { padding: 18px; }
+  .card-body { padding: 20px; }
 
   button.btn {
-    background: var(--blue); color: white; border: none; padding: 8px 14px;
-    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    color: white; border: none; padding: 9px 16px;
+    border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 2px 8px -2px var(--ring);
+    transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease, background .15s ease;
   }
-  button.btn:hover { background: var(--blue-dark); }
-  button.btn.secondary { background: white; color: var(--text); border: 1px solid var(--border); }
-  button.btn.secondary:hover { background: #f1f5f9; }
-  button.btn.secondary.active { background: var(--blue); color: white; border-color: var(--blue); }
-  button.btn.danger { background: var(--red); }
-  button.btn.small { padding: 5px 10px; font-size: 12px; }
-  button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.btn:hover { box-shadow: 0 6px 16px -4px var(--ring); transform: translateY(-1px); }
+  button.btn:active { transform: translateY(0); }
+  button.btn.secondary {
+    background: var(--card); color: var(--text); border: 1px solid var(--border); box-shadow: none;
+  }
+  button.btn.secondary:hover { background: var(--surface-2); box-shadow: none; transform: translateY(-1px); }
+  button.btn.secondary.active { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border-color: transparent; }
+  button.btn.danger { background: linear-gradient(135deg, var(--red), #b91c1c); box-shadow: 0 2px 8px -2px rgba(220,38,38,.35); }
+  button.btn.small { padding: 6px 11px; font-size: 12px; }
+  button.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
   a.link-btn, button.link-btn {
     background: none; border: none; color: var(--blue); cursor: pointer;
-    font-weight: 600; padding: 0; font-size: inherit; text-decoration: underline;
-    text-align: left; font-family: inherit;
+    font-weight: 700; padding: 0; font-size: inherit; text-decoration: none;
+    text-align: left; font-family: inherit; border-bottom: 1px solid transparent;
+    transition: border-color .15s ease;
   }
+  a.link-btn:hover, button.link-btn:hover { border-bottom-color: var(--blue); }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
+  th, td { text-align: left; padding: 11px 13px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.045em; white-space: nowrap; font-weight: 700; }
+  tbody tr { transition: background-color .12s ease; }
+  tbody tr:hover { background: var(--surface-2); }
   tr:last-child td { border-bottom: none; }
-  td.num { font-variant-numeric: tabular-nums; }
+  td.num { font-variant-numeric: tabular-nums; font-weight: 600; }
   .table-wrap { overflow-x: auto; }
 
-  .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-  .badge.paid { background: #d1fae5; color: #047857; }
-  .badge.partial { background: #fef3c7; color: #b45309; }
-  .badge.unpaid { background: #fee2e2; color: #b91c1c; }
-  .badge.income { background: #d1fae5; color: #047857; }
-  .badge.expense { background: #fee2e2; color: #b91c1c; }
-  .badge.neutral { background: #e2e8f0; color: #334155; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3.5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .badge.paid { background: var(--green-light); color: var(--green); }
+  .badge.partial { background: var(--amber-light); color: var(--amber); }
+  .badge.unpaid { background: var(--red-light); color: var(--red); }
+  .badge.income { background: var(--green-light); color: var(--green); }
+  .badge.expense { background: var(--red-light); color: var(--red); }
+  .badge.neutral { background: var(--surface-2); color: var(--muted); }
 
-  .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+  .empty {
+    text-align: center; padding: 46px 20px; color: var(--muted); font-size: 13px;
+  }
+  .empty::before {
+    content: "—"; display: block; font-size: 22px; margin-bottom: 8px; opacity: .4;
+  }
 
   form.inline-form {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px; align-items: end;
+    gap: 12px; align-items: end;
   }
-  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
   .field input, .field select, .field textarea {
-    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
-    font-size: 13px; font-family: inherit; background: white;
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 13px; font-family: inherit; background: var(--input-bg); color: var(--text);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:hover, .field select:hover, .field textarea:hover { border-color: color-mix(in srgb, var(--blue) 40%, var(--border)); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring);
   }
 
   .overlay {
-    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+    position: fixed; inset: 0; background: rgba(10, 11, 18, 0.55);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100;
     overflow-y: auto;
   }
-  .overlay.open { display: flex; }
-  .modal { background: white; border-radius: 12px; width: 100%; max-width: 420px; padding: 20px; margin: auto; }
-  .modal.wide { max-width: 660px; }
-  .modal h3 { margin: 0 0 4px; font-size: 16px; }
-  .modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
-  .modal .field { margin-bottom: 12px; }
-  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-  .modal-close-x {
-    position: absolute; top: 14px; right: 16px; background: none; border: none;
-    font-size: 18px; cursor: pointer; color: var(--muted);
+  .overlay.open { display: flex; animation: fadeIn .18s ease; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    width: 100%; max-width: 420px; padding: 22px; margin: auto; box-shadow: var(--shadow-lg);
+    animation: modalIn .22s cubic-bezier(.2,.9,.3,1.2);
   }
+  .modal.wide { max-width: 680px; }
+  .modal h3 { margin: 0 0 4px; font-size: 17px; font-weight: 800; }
+  .modal .modal-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
+  .modal .field { margin-bottom: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  .modal-close-x {
+    position: absolute; top: 14px; right: 16px; background: var(--surface-2); border: none;
+    width: 28px; height: 28px; border-radius: 999px;
+    font-size: 16px; cursor: pointer; color: var(--muted); transition: background-color .15s ease, color .15s ease;
+  }
+  .modal-close-x:hover { background: var(--border); color: var(--text); }
   .modal-inner-relative { position: relative; }
+
+  #authOverlay {
+    background:
+      radial-gradient(900px 500px at 15% 10%, rgba(129,140,248,.35), transparent 55%),
+      radial-gradient(700px 460px at 90% 90%, rgba(16,185,129,.22), transparent 55%),
+      #0a0b18;
+  }
+  #authOverlay .modal { max-width: 400px; }
+  .auth-logo {
+    width: 88px; height: 88px; border-radius: 20px; margin: 0 auto 14px;
+    background: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px; box-shadow: var(--shadow-lg);
+  }
+  .auth-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 14px; }
+  .auth-tabs {
+    display: flex; gap: 3px; margin-bottom: 16px; padding: 3px;
+    background: var(--surface-2); border-radius: var(--radius-sm);
+  }
+  .auth-tabs .btn.secondary { border: none; background: transparent; box-shadow: none; }
+  .auth-tabs .btn.secondary:hover { background: color-mix(in srgb, var(--card) 70%, transparent); }
+  .auth-tabs .btn.secondary.active { box-shadow: var(--shadow-sm); }
+
+  .theme-toggle {
+    display: inline-flex; gap: 3px; padding: 3px; margin-top: 4px;
+    background: var(--surface-2); border-radius: var(--radius-sm);
+  }
+  .theme-option {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: none; border: none; padding: 8px 16px;
+    border-radius: 7px; font-size: 13px; font-weight: 700; font-family: inherit;
+    color: var(--muted); cursor: pointer;
+    transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .theme-option:hover { color: var(--text); background: color-mix(in srgb, var(--card) 70%, transparent); }
+  .theme-option.active { color: var(--text); background: var(--card); box-shadow: var(--shadow-sm); }
+  .theme-option.active .tab-icon { stroke: var(--blue); }
 
   .balance-edit { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
   .balance-edit .field { flex: 1; min-width: 160px; }
 
-  .month-filter { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; }
+  .month-filter { padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; background: var(--input-bg); color: var(--text); }
 
   .event-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
   .event-card {
-    border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--card);
-    cursor: pointer; transition: box-shadow .15s;
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 17px; background: var(--card);
+    cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    box-shadow: var(--shadow-sm);
   }
-  .event-card:hover { box-shadow: 0 4px 14px rgba(15,23,42,0.08); }
-  .event-card .ev-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .event-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: color-mix(in srgb, var(--blue) 30%, var(--border)); }
+  .event-card .ev-name { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
   .event-card .ev-date { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
   .event-card .ev-row { display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; }
-  .progress-track { background: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden; margin-top: 10px; }
-  .progress-fill { height: 100%; border-radius: 999px; }
+  .progress-track { background: var(--surface-2); border-radius: 999px; height: 6px; overflow: hidden; margin-top: 10px; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
 
   .summary-highlight {
-    background: linear-gradient(135deg, #eef3ff, #f4f6fb);
+    background: linear-gradient(135deg, var(--blue-light), transparent 120%), var(--card);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 16px;
+    border-radius: var(--radius);
+    padding: 17px 19px;
+    margin-bottom: 18px;
   }
-  .summary-highlight h3 { margin: 0 0 10px; font-size: 14px; }
+  .summary-highlight h3 { margin: 0 0 10px; font-size: 14px; font-weight: 800; }
 
   .bill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
   .bill-event-card {
-    border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--card);
-    cursor: pointer; transition: box-shadow .15s;
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 17px; background: var(--card);
+    cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    box-shadow: var(--shadow-sm);
   }
-  .bill-event-card:hover { box-shadow: 0 4px 14px rgba(15,23,42,0.08); }
-  .bill-event-card .be-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .bill-event-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: color-mix(in srgb, var(--blue) 30%, var(--border)); }
+  .bill-event-card .be-name { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
   .bill-event-card .be-count { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
   .bill-thumb-strip { display: flex; gap: 6px; }
-  .bill-thumb-strip img { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
-  .bill-thumb-more { width: 52px; height: 52px; border-radius: 6px; background: #f1f5f9; color: var(--muted);
-    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+  .bill-thumb-strip img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .bill-thumb-more { width: 52px; height: 52px; border-radius: 8px; background: var(--surface-2); color: var(--muted);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
 
   .bill-thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 14px; }
-  .bill-thumb-card { position: relative; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #f8fafc; }
+  .bill-thumb-card { position: relative; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); transition: box-shadow .15s ease; }
+  .bill-thumb-card:hover { box-shadow: var(--shadow); }
   .bill-thumb-card img { width: 100%; height: 100px; object-fit: cover; display: block; cursor: pointer; }
   .bill-thumb-card .bill-pdf-icon {
     width: 100%; height: 100px; display: flex; align-items: center; justify-content: center;
-    font-size: 26px; color: var(--muted); cursor: pointer; background: #eef2f7;
+    font-size: 26px; color: var(--muted); cursor: pointer; background: var(--surface-2);
   }
-  .bill-thumb-card .bill-thumb-meta { padding: 5px 8px 0; font-size: 11px; color: var(--muted); }
-  .bill-thumb-card .bill-thumb-desc { font-size: 11px; color: var(--text); padding: 0 8px 6px; word-break: break-word; }
+  .bill-thumb-card .bill-thumb-meta { padding: 6px 8px 0; font-size: 11px; color: var(--muted); }
+  .bill-thumb-card .bill-thumb-desc { font-size: 11px; color: var(--text); padding: 0 8px 7px; word-break: break-word; }
   .bill-thumb-card .bill-delete-btn {
-    position: absolute; top: 4px; right: 4px; background: rgba(15,23,42,0.65); color: white; border: none;
-    border-radius: 6px; width: 22px; height: 22px; font-size: 13px; cursor: pointer; line-height: 1;
+    position: absolute; top: 5px; right: 5px; background: rgba(10,11,18,0.68); color: white; border: none;
+    border-radius: 7px; width: 22px; height: 22px; font-size: 13px; cursor: pointer; line-height: 1;
+    transition: background-color .15s ease;
   }
+  .bill-thumb-card .bill-delete-btn:hover { background: var(--red); }
 
   .lightbox-overlay {
-    position: fixed; inset: 0; background: rgba(15,23,42,0.85); display: none;
+    position: fixed; inset: 0; background: rgba(6,7,12,0.92); display: none;
     align-items: center; justify-content: center; padding: 20px; z-index: 200;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   }
-  .lightbox-overlay.open { display: flex; }
+  .lightbox-overlay.open { display: flex; animation: fadeIn .18s ease; }
   .lightbox-content { max-width: 90vw; max-height: 85vh; }
-  .lightbox-content img { max-width: 90vw; max-height: 85vh; border-radius: 8px; display: block; }
+  .lightbox-content img { max-width: 90vw; max-height: 85vh; border-radius: 10px; display: block; box-shadow: var(--shadow-lg); }
   .lightbox-close {
-    position: fixed; top: 18px; right: 22px; background: rgba(255,255,255,0.15); color: white;
-    border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 14px; font-weight: 600;
+    position: fixed; top: 18px; right: 22px; background: rgba(255,255,255,0.12); color: white;
+    border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sm); padding: 8px 14px; cursor: pointer; font-size: 14px; font-weight: 700;
+    transition: background-color .15s ease;
   }
+  .lightbox-close:hover { background: rgba(255,255,255,0.22); }
 
-  footer { text-align: center; color: var(--muted); font-size: 11px; padding: 20px; }
+  footer { text-align: center; color: var(--muted); font-size: 11.5px; padding: 26px 20px 34px; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
   @media (max-width: 640px) {
     header { padding: 12px 14px; }
-    main { padding: 14px; }
+    nav { padding: 8px 14px; top: 62px; }
+    main { padding: 16px 14px 40px; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <h1 id="clubNameTitle">Club Finance Tracker</h1>
-    <div class="sub">Cash • Bank • Membership Dues • Events • Monthly Journal</div>
+  <div class="brand">
+    <div class="brand-mark">
+      <img src="logo.png" alt="Rotaract Club of Madhyapur" />
+    </div>
+    <div>
+      <h1 id="clubNameTitle">Rotaract Club of Madhyapur Finance Tracker</h1>
+      <div class="sub">Cash • Bank • Membership Dues • Events • Monthly Journal</div>
+    </div>
   </div>
   <div class="header-actions" id="headerActions" style="display:none;">
     <span id="authUserLabel" style="font-size:12px; color:var(--muted); align-self:center; margin-right:4px;"></span>
@@ -241,11 +486,14 @@
 
 <!-- Auth Screen (shown until signed in) -->
 <div class="overlay open" id="authOverlay" style="z-index:300;">
-  <div class="modal" style="max-width:380px;">
-    <h3 id="authTitle">Sign In</h3>
-    <div class="modal-sub">Sign in to see and add the club's shared records. Everyone on this account sees the same live data.</div>
+  <div class="modal">
+    <div class="auth-logo">
+      <img src="logo.png" alt="Rotaract Club of Madhyapur" />
+    </div>
+    <h3 id="authTitle" style="text-align:center;">Sign In</h3>
+    <div class="modal-sub" style="text-align:center;">Sign in to see and add the club's shared records. Everyone on this account sees the same live data.</div>
 
-    <div style="display:flex; gap:6px; margin-bottom:14px;">
+    <div class="auth-tabs">
       <button type="button" class="btn secondary small" id="authTabLogin" style="flex:1;">Sign In</button>
       <button type="button" class="btn secondary small" id="authTabRegister" style="flex:1;">Create Account</button>
     </div>
@@ -270,12 +518,38 @@
 
 <div id="appShell" style="display:none;">
 <nav>
-  <button class="tab-btn active" data-tab="overview">Overview</button>
-  <button class="tab-btn" data-tab="members">Membership & Dues</button>
-  <button class="tab-btn" data-tab="transactions">Transactions</button>
-  <button class="tab-btn" data-tab="events">Events</button>
-  <button class="tab-btn" data-tab="bills">Bills</button>
-  <button class="tab-btn" data-tab="settings">Settings</button>
+  <button class="tab-btn active" data-tab="overview">
+    <svg class="tab-icon" viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
+    Overview
+  </button>
+  <button class="tab-btn" data-tab="members">
+    <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.6 2.7-6.5 6-6.5s6 2.9 6 6.5"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15.8 13.8c2.2.6 3.9 2.9 4.2 6.2"/></svg>
+    Membership & Dues
+  </button>
+  <button class="tab-btn" data-tab="transactions">
+    <svg class="tab-icon" viewBox="0 0 24 24"><path d="M3 7h14l-3.5-3.5"/><path d="M21 17H7l3.5 3.5"/></svg>
+    Transactions
+  </button>
+  <button class="tab-btn" data-tab="events">
+    <svg class="tab-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+    Events
+  </button>
+  <button class="tab-btn" data-tab="bills">
+    <svg class="tab-icon" viewBox="0 0 24 24"><path d="M6 3h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3V3z"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12.5" x2="15" y2="12.5"/></svg>
+    Bills
+  </button>
+  <button class="tab-btn" data-tab="liabilities">
+    <svg class="tab-icon" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>
+    Liabilities
+  </button>
+  <button class="tab-btn" data-tab="activity">
+    <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14.5"/></svg>
+    Recent Activity
+  </button>
+  <button class="tab-btn" data-tab="settings">
+    <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+    Settings
+  </button>
 </nav>
 
 <main>
@@ -316,10 +590,27 @@
       <div class="card-body">
         <form class="inline-form" id="memberForm">
           <div class="field"><label>Name</label><input type="text" id="mName" required /></div>
+          <div class="field"><label>Designation</label><input type="text" id="mDesignation" list="designationSuggestions" placeholder="e.g. President, Member" /></div>
           <div class="field"><label>Phone</label><input type="text" id="mPhone" /></div>
           <div class="field"><label>Annual Dues (Rs)</label><input type="number" id="mDues" min="0" required /></div>
           <div class="field"><button type="submit" class="btn">Add Member</button></div>
         </form>
+        <datalist id="designationSuggestions">
+          <option value="President"></option>
+          <option value="Immediate Past President"></option>
+          <option value="Vice President"></option>
+          <option value="Secretary"></option>
+          <option value="Treasurer"></option>
+          <option value="Sergeant-at-Arms"></option>
+          <option value="Club Service Director"></option>
+          <option value="Community Service Director"></option>
+          <option value="International Service Director"></option>
+          <option value="Professional Development Director"></option>
+          <option value="Membership Development Director"></option>
+          <option value="Board Member"></option>
+          <option value="Member"></option>
+          <option value="New Member"></option>
+        </datalist>
       </div>
     </div>
 
@@ -327,13 +618,18 @@
       <div class="card-header">
         <h2>Members</h2>
         <div class="header-right">
+          <select id="memberSort" class="month-filter">
+            <option value="position">Sort: Position</option>
+            <option value="status">Sort: Payment Status</option>
+            <option value="name">Sort: Name (A-Z)</option>
+          </select>
           <button class="btn secondary small" onclick="exportMembersSummaryCSV()">Export Summary (CSV)</button>
           <button class="btn secondary small" onclick="exportMembersHistoryCSV()">Export Payment History (CSV)</button>
         </div>
       </div>
       <div class="card-body table-wrap">
         <table id="memberTable">
-          <thead><tr><th>Name</th><th>Phone</th><th>Annual Dues</th><th>Paid</th><th>Remaining</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>SN</th><th>Name</th><th>Designation</th><th>Phone</th><th>Annual Dues</th><th>Paid</th><th>Remaining</th><th>Status</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
         <div id="memberEmpty" class="empty" style="display:none;">No members added yet.</div>
@@ -360,8 +656,9 @@
           <div class="field">
             <label>Account</label>
             <select id="tAccount">
-              <option value="Cash">Cash</option>
-              <option value="Bank">Bank</option>
+              <option value="Cash">Cash in Hand</option>
+              <option value="Online">Cash in Online</option>
+              <option value="Bank">Cash in Bank</option>
             </select>
           </div>
           <div class="field"><label>Amount (Rs)</label><input type="number" id="tAmount" min="0" required /></div>
@@ -378,6 +675,12 @@
         <h2>Monthly Journal</h2>
         <div class="header-right">
           <select id="monthFilter" class="month-filter"></select>
+          <select id="txnTypeFilter" class="month-filter">
+            <option value="all">All Types</option>
+            <option value="income">Income Only</option>
+            <option value="expense">Expenses Only</option>
+            <option value="liability">Liabilities Paid Only</option>
+          </select>
           <button class="btn secondary small" onclick="openCsvImportModal()">Import CSV</button>
           <button class="btn secondary small" onclick="exportMonthlyReportCSV()">Export Month (CSV)</button>
           <button class="btn secondary small" onclick="exportAllTransactionsCSV()">Export All (CSV)</button>
@@ -445,8 +748,92 @@
     </div>
   </section>
 
+  <!-- LIABILITIES -->
+  <section id="tab-liabilities" class="tab">
+    <div class="stat-grid" id="liabilityStats"></div>
+
+    <div class="card">
+      <div class="card-header"><h2>Add Liability</h2></div>
+      <div class="card-body">
+        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+          Money the club owes — a vendor bill, a loan, a reimbursement, or an amount owed to a member. Link it to a member so you can weigh it against dues they still owe.
+        </p>
+        <form class="inline-form" id="liabilityForm">
+          <div class="field"><label>Payee / Source</label><input type="text" id="lPayee" placeholder="e.g. Printing Vendor" required /></div>
+          <div class="field"><label>Owed to Member (optional)</label><select id="lMember"><option value="none">None</option></select></div>
+          <div class="field"><label>Event (optional)</label><select id="lEvent"><option value="none">None</option></select></div>
+          <div class="field"><label>Category (optional)</label><input type="text" id="lCategory" placeholder="e.g. Vendor, Loan, Reimbursement" /></div>
+          <div class="field"><label>Amount Owed (Rs)</label><input type="number" id="lAmount" min="0" required /></div>
+          <div class="field"><label>Date Incurred</label><input type="date" id="lDate" required /></div>
+          <div class="field"><label>Notes</label><input type="text" id="lNotes" placeholder="Optional" /></div>
+          <div class="field"><button type="submit" class="btn">Add Liability</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Liabilities</h2>
+        <div class="header-right"><span style="font-size:12px; color:var(--muted);">Pending amounts stay on top; fully paid liabilities move to the bottom.</span></div>
+      </div>
+      <div class="card-body table-wrap">
+        <table id="liabilityTable">
+          <thead><tr><th>Date</th><th>Payee / Source</th><th>Member</th><th>Event</th><th>Category</th><th>Amount</th><th>Paid</th><th>Remaining</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="liabilityEmpty" class="empty" style="display:none;">No liabilities recorded — the club owes nothing on file.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECENT ACTIVITY -->
+  <section id="tab-activity" class="tab">
+    <div class="stat-grid" id="activityStats"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Activity</h2>
+        <div class="header-right">
+          <span style="font-size:12px; color:var(--muted); max-width:420px;">
+            Every deletion and edit is logged here permanently for transparency — entries cannot be changed or removed by anyone, including from this app.
+          </span>
+        </div>
+      </div>
+      <div class="card-body table-wrap">
+        <table id="activityTable">
+          <thead><tr><th>When</th><th>Action</th><th>Type</th><th>Details</th><th>By</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="activityEmpty" class="empty" style="display:none;">No deletions or edits recorded yet.</div>
+      </div>
+    </div>
+  </section>
+
   <!-- SETTINGS -->
   <section id="tab-settings" class="tab">
+    <div class="card">
+      <div class="card-header"><h2>Appearance</h2></div>
+      <div class="card-body">
+        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+          Choose how the app looks. "System" follows your device's own light/dark setting automatically.
+        </p>
+        <div class="theme-toggle" id="themeToggle" role="group" aria-label="Theme">
+          <button type="button" class="theme-option" id="themeLight" onclick="setTheme('light')">
+            <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 3v2.2M12 18.8V21M4.2 4.2l1.5 1.5M18.3 18.3l1.5 1.5M3 12h2.2M18.8 12H21M4.2 19.8l1.5-1.5M18.3 5.7l1.5-1.5"/></svg>
+            Light
+          </button>
+          <button type="button" class="theme-option" id="themeDark" onclick="setTheme('dark')">
+            <svg class="tab-icon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+            Dark
+          </button>
+          <button type="button" class="theme-option" id="themeSystem" onclick="setTheme('system')">
+            <svg class="tab-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg>
+            System
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header"><h2>Club Name</h2></div>
       <div class="card-body">
@@ -462,10 +849,11 @@
       <div class="card-header"><h2>Opening Balances</h2></div>
       <div class="card-body">
         <p style="color:var(--muted); font-size:13px; margin-top:0;">
-          Set this once when you start using the tracker. Cash/Bank balances shown on the Overview tab are this opening amount plus every transaction you record.
+          Set this once when you start using the tracker. Balances shown on the Overview tab are this opening amount plus every transaction you record.
         </p>
         <div class="balance-edit">
           <div class="field"><label>Opening Cash in Hand (Rs)</label><input type="number" id="openCash" /></div>
+          <div class="field"><label>Opening Cash in Online (Rs)</label><input type="number" id="openOnline" /></div>
           <div class="field"><label>Opening Cash in Bank (Rs)</label><input type="number" id="openBank" /></div>
         </div>
         <button class="btn" style="margin-top:12px;" onclick="saveOpeningBalances()">Save Balances</button>
@@ -495,7 +883,7 @@
     <div class="field"><label>Date</label><input type="date" id="payDate" /></div>
     <div class="field">
       <label>Account (where the money goes)</label>
-      <select id="payAccount"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
+      <select id="payAccount"><option value="Cash">Cash in Hand</option><option value="Online">Cash in Online</option><option value="Bank">Cash in Bank</option></select>
     </div>
     <div class="field"><label>Payment Method</label><select id="payMethod"></select></div>
     <div class="field"><label>Notes / Reference</label><input type="text" id="payNotes" placeholder="Optional" /></div>
@@ -506,12 +894,34 @@
   </div>
 </div>
 
+<!-- Record Liability Payment Modal -->
+<div class="overlay" id="liabilityPaymentOverlay">
+  <div class="modal">
+    <h3>Record Liability Payment</h3>
+    <div id="liabilityPaymentName" class="modal-sub"></div>
+    <div class="field"><label>Amount Paid (Rs)</label><input type="number" id="lpAmount" min="0" /></div>
+    <div class="field"><label>Date</label><input type="date" id="lpDate" /></div>
+    <div class="field">
+      <label>Account (where the money comes from)</label>
+      <select id="lpAccount"><option value="Cash">Cash in Hand</option><option value="Online">Cash in Online</option><option value="Bank">Cash in Bank</option></select>
+    </div>
+    <div class="field"><label>Payment Method</label><select id="lpMethod"></select></div>
+    <div class="field"><label>Notes / Reference</label><input type="text" id="lpNotes" placeholder="Optional" /></div>
+    <div id="liabilityPaymentError" style="color:var(--red); font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeLiabilityPaymentModal()">Cancel</button>
+      <button class="btn" onclick="submitLiabilityPayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- Edit Member Modal -->
 <div class="overlay" id="editMemberOverlay">
   <div class="modal">
     <h3>Edit Member</h3>
-    <div class="modal-sub">Fix a mistaken name, phone number, or dues amount.</div>
+    <div class="modal-sub">Fix a mistaken name, position, phone number, or dues amount.</div>
     <div class="field"><label>Name</label><input type="text" id="editMName" /></div>
+    <div class="field"><label>Designation</label><input type="text" id="editMDesignation" list="designationSuggestions" /></div>
     <div class="field"><label>Phone</label><input type="text" id="editMPhone" /></div>
     <div class="field"><label>Annual Dues (Rs)</label><input type="number" id="editMDues" min="0" /></div>
     <div class="modal-actions">
@@ -563,7 +973,7 @@
         <div class="field"><label>Category</label><select id="etCategory"></select></div>
         <div class="field">
           <label>Account</label>
-          <select id="etAccount"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
+          <select id="etAccount"><option value="Cash">Cash in Hand</option><option value="Online">Cash in Online</option><option value="Bank">Cash in Bank</option></select>
         </div>
         <div class="field"><label>Amount (Rs)</label><input type="number" id="etAmount" min="0" required /></div>
         <div class="field"><label>Payment Method</label><select id="etMethod"></select></div>
@@ -578,6 +988,28 @@
         <tbody></tbody>
       </table>
       <div id="edEmpty" class="empty" style="display:none;">No transactions linked to this event yet.</div>
+    </div>
+
+    <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin:16px 0;">
+      <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Add Liability for this Event</div>
+      <form class="inline-form" id="eventLiabilityForm">
+        <div class="field"><label>Payee / Source</label><input type="text" id="elPayee" placeholder="e.g. Catering Vendor" required /></div>
+        <div class="field"><label>Owed to Member (optional)</label><select id="elMember"><option value="none">None</option></select></div>
+        <div class="field"><label>Category (optional)</label><input type="text" id="elCategory" placeholder="e.g. Vendor, Reimbursement" /></div>
+        <div class="field"><label>Amount Owed (Rs)</label><input type="number" id="elAmount" min="0" required /></div>
+        <div class="field"><label>Date Incurred</label><input type="date" id="elDate" required /></div>
+        <div class="field"><label>Notes</label><input type="text" id="elNotes" placeholder="Optional" /></div>
+        <div class="field"><button type="submit" class="btn small">Add</button></div>
+      </form>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom:16px;">
+      <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Liabilities for this Event</div>
+      <table id="edLiabilityTable">
+        <thead><tr><th>Date</th><th>Payee / Source</th><th>Member</th><th>Amount</th><th>Paid</th><th>Remaining</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="edLiabilityEmpty" class="empty" style="display:none;">No liabilities linked to this event yet.</div>
     </div>
 
     <div class="modal-actions">
@@ -652,7 +1084,7 @@
       <div class="balance-edit">
         <div class="field">
           <label>Default Account</label>
-          <select id="csvDefaultAccount"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
+          <select id="csvDefaultAccount"><option value="Cash">Cash in Hand</option><option value="Online">Cash in Online</option><option value="Bank">Cash in Bank</option></select>
         </div>
         <div class="field">
           <label>Assign all rows to Event (optional)</label>
@@ -679,7 +1111,7 @@
   </div>
 </div>
 
-<footer>Club Finance Tracker — shared data, signed-in access only.</footer>
+<footer>Rotaract Club of Madhyapur Finance Tracker — shared data, signed-in access only.</footer>
 
 <script>
 /* =========================================================
@@ -703,19 +1135,53 @@
 
 const CATEGORIES = {
   Income: ["Membership Dues", "Donation", "Sponsorship", "Registration", "Fundraising", "Grant", "Other Income"],
-  Expense: ["Office", "Event", "Printing", "Travel", "Food", "Utilities", "Other Expense"],
+  Expense: ["Office", "Event", "Printing", "Travel", "Food", "Utilities", "Liability Payment", "Other Expense"],
 };
 const PAYMENT_METHODS = ["Cash", "Bank Transfer", "eSewa", "Khalti", "IME Pay", "FonePay", "Cheque", "Other"];
+const ACCOUNT_LABELS = { Cash: "Cash in Hand", Online: "Cash in Online", Bank: "Cash in Bank" };
+function accountLabel(v) { return ACCOUNT_LABELS[v] || v; }
+
+/* ---------------- Appearance (Light / Dark / System) ----------------
+   "system" means no explicit choice: [data-theme] stays off <html> and the
+   CSS just follows prefers-color-scheme, same as before this feature existed. */
+function getThemePref() {
+  try {
+    const t = localStorage.getItem("theme");
+    return t === "light" || t === "dark" ? t : "system";
+  } catch (e) {
+    return "system";
+  }
+}
+function setTheme(mode) {
+  try {
+    if (mode === "light" || mode === "dark") localStorage.setItem("theme", mode);
+    else localStorage.removeItem("theme");
+  } catch (e) {}
+  if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
+  else document.documentElement.removeAttribute("data-theme");
+  syncThemeButtons();
+}
+function syncThemeButtons() {
+  const pref = getThemePref();
+  ["light", "dark", "system"].forEach((mode) => {
+    const btn = document.getElementById("theme" + mode[0].toUpperCase() + mode.slice(1));
+    if (btn) btn.classList.toggle("active", pref === mode);
+  });
+}
+syncThemeButtons();
 
 function defaultState() {
   return {
-    clubName: "Club Finance Tracker",
+    clubName: "Rotaract Club of Madhyapur Finance Tracker",
     openingCash: 0,
+    openingOnline: 0,
     openingBank: 0,
     members: [],
     events: [],
     transactions: [],
     bills: [],
+    liabilities: [],
+    activity: [],
   };
 }
 
@@ -725,6 +1191,7 @@ let editMemberTargetId = null;
 let memberDetailId = null;
 let eventDetailId = null;
 let billDetailGroupKey = null; // event id, or "general" for unlinked bills
+let liabilityPaymentTargetId = null;
 
 /* =========================================================
    AUTH + API CLIENT
@@ -815,7 +1282,7 @@ function notifyError(err) {
 /* ---------------- Normalize snake_case DB rows into the shapes the
    render functions below expect. ---------------- */
 function normalizeMember(r) {
-  return { id: r.id, name: r.name, phone: r.phone || "", annualDues: Number(r.annual_dues) || 0 };
+  return { id: r.id, name: r.name, designation: r.designation || "", phone: r.phone || "", annualDues: Number(r.annual_dues) || 0 };
 }
 function normalizeEvent(r) {
   return {
@@ -831,7 +1298,7 @@ function normalizeTransaction(r) {
     id: r.id, date: String(r.date).slice(0, 10), description: r.description,
     type: r.type, category: r.category, account: r.account, amount: Number(r.amount) || 0,
     paymentMethod: r.payment_method || "", notes: r.notes || "",
-    memberId: r.member_id, eventId: r.event_id,
+    memberId: r.member_id, eventId: r.event_id, liabilityId: r.liability_id,
   };
 }
 function normalizeBill(r) {
@@ -843,9 +1310,36 @@ function normalizeBill(r) {
 }
 function normalizeSettings(r) {
   return {
-    clubName: r.club_name || "Club Finance Tracker",
+    clubName: r.club_name || "Rotaract Club of Madhyapur Finance Tracker",
     openingCash: Number(r.opening_cash) || 0,
+    openingOnline: Number(r.opening_online) || 0,
     openingBank: Number(r.opening_bank) || 0,
+  };
+}
+function normalizeActivity(r) {
+  return {
+    id: r.id,
+    action: r.action, // "delete" | "update"
+    entityType: r.entity_type,
+    entityId: r.entity_id,
+    summary: r.summary,
+    byName: r.performed_by_name || "Unknown",
+    byEmail: r.performed_by_email || "",
+    at: r.created_at,
+  };
+}
+function normalizeLiability(r) {
+  return {
+    id: r.id,
+    payeeName: r.payee_name,
+    memberId: r.member_id,
+    eventId: r.event_id,
+    category: r.category || "",
+    amount: Number(r.amount) || 0,
+    paidAmount: Number(r.paid_amount) || 0,
+    status: r.status,
+    date: r.date ? String(r.date).slice(0, 10) : "",
+    notes: r.notes || "",
   };
 }
 
@@ -864,8 +1358,37 @@ async function loadAllData() {
       events: (events || []).map(normalizeEvent),
       transactions: (transactions || []).map(normalizeTransaction),
       bills: (bills || []).map(normalizeBill),
+      activity: [],
+      liabilities: [],
     }
   );
+  // Fetched separately and non-fatally: these features need DB migrations
+  // (activity_log / liabilities tables) that may not be applied everywhere
+  // yet, and a hiccup here should never block sign-in or the rest of the app.
+  await Promise.all([refreshActivity(), refreshLiabilities()]);
+}
+
+// Re-fetches just the activity log — called after any delete/edit so the
+// Recent Activity tab reflects the entry the server just wrote.
+async function refreshActivity() {
+  try {
+    const rows = await api.get("/api/activity");
+    state.activity = (rows || []).map(normalizeActivity);
+  } catch (err) {
+    // Non-fatal: the mutation itself already succeeded.
+    console.error("Could not refresh activity log:", err);
+  }
+}
+
+// Re-fetches liabilities — called after add/pay/delete so the Liabilities
+// tab (and its pending/paid ordering) reflects the server's state.
+async function refreshLiabilities() {
+  try {
+    const rows = await api.get("/api/liabilities");
+    state.liabilities = (rows || []).map(normalizeLiability);
+  } catch (err) {
+    console.error("Could not refresh liabilities:", err);
+  }
 }
 
 /* ---------------- Auth screen ---------------- */
@@ -979,7 +1502,8 @@ function memberById(id) { return state.members.find((m) => m.id === id); }
 
 /* ---------------- Derived totals ---------------- */
 function accountTotal(account) {
-  const opening = account === "Cash" ? Number(state.openingCash) || 0 : Number(state.openingBank) || 0;
+  const openingByAccount = { Cash: state.openingCash, Online: state.openingOnline, Bank: state.openingBank };
+  const opening = Number(openingByAccount[account]) || 0;
   const delta = state.transactions
     .filter((t) => t.account === account)
     .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
@@ -999,6 +1523,45 @@ function memberStatus(m) {
   if (paid >= m.annualDues) return "paid";
   return "partial";
 }
+
+// Club board protocol order: President down through the executive/director
+// posts, then Board Members, then general Members, then New Members last.
+// Anything typed in that doesn't match a known title still sorts sensibly —
+// just below the named leadership posts and above plain "Member".
+function designationRank(designation) {
+  const d = (designation || "").trim().toLowerCase();
+  if (!d) return { rank: 99, sub: 0 };
+  const leadingNum = d.match(/^(\d+)/);
+  const sub = leadingNum ? Number(leadingNum[1]) : 0;
+
+  if (/^president$/.test(d)) return { rank: 1, sub: 0 };
+  if (/immediate past president|\bipp\b/.test(d)) return { rank: 2, sub: 0 };
+  if (/vice[\s-]?president|\bvp\b/.test(d)) return { rank: 3, sub };
+  if (/secretary/.test(d)) return { rank: 4, sub: 0 };
+  if (/treasurer/.test(d)) return { rank: 5, sub: 0 };
+  if (/sergeant/.test(d)) return { rank: 6, sub: 0 };
+  if (/club service/.test(d)) return { rank: 7, sub: 0 };
+  if (/community service/.test(d)) return { rank: 8, sub: 0 };
+  if (/international service/.test(d)) return { rank: 9, sub: 0 };
+  if (/professional development/.test(d)) return { rank: 10, sub: 0 };
+  if (/membership development/.test(d)) return { rank: 11, sub: 0 };
+  if (/director|board|\bbod\b/.test(d)) return { rank: 12, sub: 0 };
+  if (/^new member$/.test(d)) return { rank: 15, sub: 0 };
+  if (/^member$/.test(d)) return { rank: 14, sub: 0 };
+  return { rank: 13, sub: 0 }; // unrecognized custom title
+}
+function compareMembersByPosition(a, b) {
+  const ra = designationRank(a.designation);
+  const rb = designationRank(b.designation);
+  if (ra.rank !== rb.rank) return ra.rank - rb.rank;
+  if (ra.sub !== rb.sub) return ra.sub - rb.sub;
+  return a.name.localeCompare(b.name);
+}
+const MEMBER_STATUS_SORT_ORDER = { paid: 0, unpaid: 1, partial: 2 };
+function compareMembersByStatus(a, b) {
+  const diff = MEMBER_STATUS_SORT_ORDER[memberStatus(a)] - MEMBER_STATUS_SORT_ORDER[memberStatus(b)];
+  return diff !== 0 ? diff : a.name.localeCompare(b.name);
+}
 function eventTransactions(eventId) {
   return state.transactions.filter((t) => t.eventId === eventId);
 }
@@ -1007,6 +1570,17 @@ function eventTotals(eventId) {
   const income = txns.filter((t) => t.type === "Income").reduce((s, t) => s + t.amount, 0);
   const expense = txns.filter((t) => t.type === "Expense").reduce((s, t) => s + t.amount, 0);
   return { income, expense, net: income - expense };
+}
+function liabilitiesForEvent(eventId) {
+  return state.liabilities.filter((l) => l.eventId === eventId);
+}
+function liabilityRemaining(l) { return Math.max(l.amount - l.paidAmount, 0); }
+function totalLiabilitiesRemaining() { return state.liabilities.reduce((s, l) => s + liabilityRemaining(l), 0); }
+function totalLiabilitiesPaid() { return state.liabilities.reduce((s, l) => s + l.paidAmount, 0); }
+// Liabilities owed to a given member, so their pending payout can be weighed
+// against dues they still owe the club (manual reconciliation, not netted automatically).
+function memberLiabilitiesRemaining(memberId) {
+  return state.liabilities.filter((l) => l.memberId === memberId).reduce((s, l) => s + liabilityRemaining(l), 0);
 }
 function currentMonthKey() { return monthKey(todayISO()); }
 function monthlyTotals() {
@@ -1045,12 +1619,23 @@ function downloadCSV(filename, rows) {
   URL.revokeObjectURL(url);
 }
 function txnEventName(t) { return t.eventId ? (eventById(t.eventId)?.name || "") : ""; }
+// Powers the Monthly Journal's type filter — "Liabilities Paid" is
+// identified by the transaction's liabilityId link (not just the category
+// text), and "Expenses Only" excludes those so the three options are
+// mutually exclusive.
+function transactionMatchesTypeFilter(t, filterVal) {
+  if (filterVal === "income") return t.type === "Income";
+  if (filterVal === "expense") return t.type === "Expense" && !t.liabilityId;
+  if (filterVal === "liability") return !!t.liabilityId;
+  return true;
+}
 
 /* ---------------- Rendering ---------------- */
 function renderAll() {
-  document.getElementById("clubNameTitle").textContent = state.clubName || "Club Finance Tracker";
+  document.getElementById("clubNameTitle").textContent = state.clubName || "Rotaract Club of Madhyapur Finance Tracker";
   document.getElementById("clubNameInput").value = state.clubName || "";
   document.getElementById("openCash").value = state.openingCash || 0;
+  document.getElementById("openOnline").value = state.openingOnline || 0;
   document.getElementById("openBank").value = state.openingBank || 0;
 
   refreshStaticSelects();
@@ -1059,12 +1644,15 @@ function renderAll() {
   renderTransactions();
   renderEvents();
   renderBills();
+  renderLiabilities();
+  renderActivity();
 }
 
 function refreshStaticSelects() {
   fillSelect(document.getElementById("tMethod"), PAYMENT_METHODS);
   fillSelect(document.getElementById("payMethod"), PAYMENT_METHODS);
   fillSelect(document.getElementById("etMethod"), PAYMENT_METHODS);
+  fillSelect(document.getElementById("lpMethod"), PAYMENT_METHODS);
 
   const tEvent = document.getElementById("tEvent");
   const prev = tEvent.value;
@@ -1077,6 +1665,24 @@ function refreshStaticSelects() {
   bEventSelect.innerHTML = `<option value="general">General (no event)</option>` +
     state.events.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
   bEventSelect.value = [...bEventSelect.options].some((o) => o.value === prevBillEvent) ? prevBillEvent : "general";
+
+  const lMember = document.getElementById("lMember");
+  const prevLMember = lMember.value;
+  lMember.innerHTML = `<option value="none">None</option>` +
+    state.members.map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join("");
+  lMember.value = [...lMember.options].some((o) => o.value === prevLMember) ? prevLMember : "none";
+
+  const lEvent = document.getElementById("lEvent");
+  const prevLEvent = lEvent.value;
+  lEvent.innerHTML = `<option value="none">None</option>` +
+    state.events.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
+  lEvent.value = [...lEvent.options].some((o) => o.value === prevLEvent) ? prevLEvent : "none";
+
+  const elMember = document.getElementById("elMember");
+  const prevELMember = elMember.value;
+  elMember.innerHTML = `<option value="none">None</option>` +
+    state.members.map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join("");
+  elMember.value = [...elMember.options].some((o) => o.value === prevELMember) ? prevELMember : "none";
 }
 
 function statCard(label, value, color) {
@@ -1085,20 +1691,24 @@ function statCard(label, value, color) {
 
 function renderOverview() {
   const cash = accountTotal("Cash");
+  const online = accountTotal("Online");
   const bank = accountTotal("Bank");
-  const total = cash + bank;
+  const total = cash + online + bank;
   const months = monthlyTotals();
   const thisMonth = months.find((m) => m.key === currentMonthKey()) || { income: 0, expense: 0 };
   const duesRemaining = totalDuesExpected() - totalDuesPaid();
+  const liabilitiesRemaining = totalLiabilitiesRemaining();
 
   document.getElementById("overviewStats").innerHTML = `
     ${statCard("Cash in Hand", fmt(cash), "green")}
+    ${statCard("Cash in Online", fmt(online), "green")}
     ${statCard("Cash in Bank", fmt(bank), "blue")}
     ${statCard("Total Balance", fmt(total), "blue")}
     ${statCard("This Month Income", fmt(thisMonth.income), "green")}
     ${statCard("This Month Expense", fmt(thisMonth.expense), "red")}
     ${statCard("This Month Net", fmt(thisMonth.income - thisMonth.expense), (thisMonth.income - thisMonth.expense) >= 0 ? "green" : "red")}
     ${statCard("Outstanding Dues", fmt(duesRemaining), "amber")}
+    ${statCard("Pending Liabilities", fmt(liabilitiesRemaining), "red")}
   `;
 
   const tbody = document.querySelector("#monthlyTable tbody");
@@ -1118,7 +1728,7 @@ function renderOverview() {
     <tr>
       <td>${t.date}</td>
       <td>${escapeHtml(t.description)}</td>
-      <td>${t.account}</td>
+      <td>${accountLabel(t.account)}</td>
       <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
       <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
     </tr>
@@ -1141,14 +1751,22 @@ function renderMembers() {
     ${statCard("Dues Remaining", fmt(totalDuesExpected() - totalDuesPaid()), "red")}
   `;
 
+  const sortMode = document.getElementById("memberSort").value || "position";
+  const comparator = sortMode === "status" ? compareMembersByStatus
+    : sortMode === "name" ? (a, b) => a.name.localeCompare(b.name)
+    : compareMembersByPosition;
+  const sorted = [...state.members].sort(comparator);
+
   const tbody = document.querySelector("#memberTable tbody");
-  tbody.innerHTML = state.members.map((m) => {
+  tbody.innerHTML = sorted.map((m, i) => {
     const paid = memberPaid(m.id);
     const remaining = Math.max(m.annualDues - paid, 0);
     const status = memberStatus(m);
     return `
       <tr>
+        <td class="num">${i + 1}</td>
         <td><button class="link-btn" onclick="openMemberDetail('${m.id}')">${escapeHtml(m.name)}</button></td>
+        <td>${escapeHtml(m.designation || "-")}</td>
         <td>${escapeHtml(m.phone || "-")}</td>
         <td class="num">${fmt(m.annualDues)}</td>
         <td class="num" style="color:var(--green)">${fmt(paid)}</td>
@@ -1194,8 +1812,10 @@ function renderTransactions() {
     summaryBlock.style.display = "block";
   }
 
+  const typeFilter = document.getElementById("txnTypeFilter").value || "all";
   const rows = [...state.transactions]
     .filter((t) => filterVal === "all" || monthKey(t.date) === filterVal)
+    .filter((t) => transactionMatchesTypeFilter(t, typeFilter))
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const tbody = document.querySelector("#txnTable tbody");
@@ -1295,6 +1915,171 @@ function renderBills() {
   `).join("");
 
   document.getElementById("billEmpty").style.display = state.events.length === 0 && state.bills.length === 0 ? "block" : "none";
+}
+
+/* ---------------- Liabilities ---------------- */
+function renderLiabilities() {
+  const pendingCount = state.liabilities.filter((l) => l.status === "pending").length;
+  const paidCount = state.liabilities.filter((l) => l.status === "paid").length;
+
+  document.getElementById("liabilityStats").innerHTML = `
+    ${statCard("Total Liabilities", state.liabilities.length, "blue")}
+    ${statCard("Pending", pendingCount, "red")}
+    ${statCard("Paid Off", paidCount, "green")}
+    ${statCard("Total Owed (Remaining)", fmt(totalLiabilitiesRemaining()), "amber")}
+  `;
+
+  // Server already orders pending-before-paid; keep that grouping stable
+  // here too in case rows are patched in locally between refreshes.
+  const rows = [...state.liabilities].sort((a, b) => {
+    if (a.status !== b.status) return a.status === "paid" ? 1 : -1;
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  const tbody = document.querySelector("#liabilityTable tbody");
+  tbody.innerHTML = rows.map((l) => {
+    const remaining = liabilityRemaining(l);
+    const member = l.memberId ? memberById(l.memberId) : null;
+    const event = l.eventId ? eventById(l.eventId) : null;
+    return `
+      <tr>
+        <td>${l.date}</td>
+        <td>${escapeHtml(l.payeeName)}</td>
+        <td>${member ? escapeHtml(member.name) : "-"}</td>
+        <td>${event ? escapeHtml(event.name) : "-"}</td>
+        <td>${escapeHtml(l.category || "-")}</td>
+        <td class="num">${fmt(l.amount)}</td>
+        <td class="num" style="color:var(--green)">${fmt(l.paidAmount)}</td>
+        <td class="num" style="color:var(--red)">${fmt(remaining)}</td>
+        <td><span class="badge ${l.status === "paid" ? "paid" : "unpaid"}">${l.status === "paid" ? "Paid" : "Pending"}</span></td>
+        <td style="white-space:nowrap;">
+          ${remaining > 0 ? `<button class="btn small" onclick="openLiabilityPaymentModal('${l.id}')">Record Payment</button>` : ""}
+          <button class="btn secondary small" onclick="deleteLiability('${l.id}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  document.getElementById("liabilityEmpty").style.display = rows.length ? "none" : "block";
+}
+
+document.getElementById("liabilityForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const payeeName = document.getElementById("lPayee").value.trim();
+  const memberVal = document.getElementById("lMember").value;
+  const eventVal = document.getElementById("lEvent").value;
+  const category = document.getElementById("lCategory").value.trim();
+  const amount = Number(document.getElementById("lAmount").value);
+  const date = document.getElementById("lDate").value;
+  const notes = document.getElementById("lNotes").value.trim();
+  if (!payeeName || !amount || amount <= 0 || !date) return;
+
+  try {
+    const row = await api.post("/api/liabilities", {
+      payeeName, memberId: memberVal === "none" ? null : memberVal, eventId: eventVal === "none" ? null : eventVal, category, amount, date, notes,
+    });
+    state.liabilities.push(normalizeLiability(row));
+    document.getElementById("liabilityForm").reset();
+    document.getElementById("lDate").value = todayISO();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+});
+
+function openLiabilityPaymentModal(liabilityId) {
+  const l = state.liabilities.find((x) => x.id === liabilityId);
+  if (!l) return;
+  liabilityPaymentTargetId = liabilityId;
+  const remaining = liabilityRemaining(l);
+  document.getElementById("liabilityPaymentName").textContent = `${l.payeeName} — Remaining: ${fmt(remaining)}`;
+  document.getElementById("lpAmount").value = remaining;
+  document.getElementById("lpAmount").max = remaining;
+  document.getElementById("lpDate").value = todayISO();
+  document.getElementById("lpNotes").value = "";
+  document.getElementById("liabilityPaymentError").textContent = "";
+  document.getElementById("liabilityPaymentOverlay").classList.add("open");
+}
+function closeLiabilityPaymentModal() {
+  document.getElementById("liabilityPaymentOverlay").classList.remove("open");
+  liabilityPaymentTargetId = null;
+}
+async function submitLiabilityPayment() {
+  if (!liabilityPaymentTargetId) return;
+  const amount = Number(document.getElementById("lpAmount").value);
+  const date = document.getElementById("lpDate").value || todayISO();
+  const account = document.getElementById("lpAccount").value;
+  const paymentMethod = document.getElementById("lpMethod").value;
+  const notes = document.getElementById("lpNotes").value.trim();
+  const errEl = document.getElementById("liabilityPaymentError");
+  errEl.textContent = "";
+  if (!amount || amount <= 0) { errEl.textContent = "Enter a valid payment amount."; return; }
+
+  try {
+    const { liability, transaction } = await api.post(`/api/liabilities/${liabilityPaymentTargetId}/pay`, {
+      amount, date, account, paymentMethod, notes,
+    });
+    const idx = state.liabilities.findIndex((l) => l.id === liability.id);
+    if (idx !== -1) state.liabilities[idx] = normalizeLiability(liability);
+    state.transactions.push(normalizeTransaction(transaction));
+    closeLiabilityPaymentModal();
+    await refreshActivity();
+    renderAll();
+    // The payment transaction may be tagged to the currently-open event
+    // (if the liability is linked to one) — refresh its stats/tables too.
+    if (eventDetailId) openEventDetail(eventDetailId);
+  } catch (err) {
+    errEl.textContent = err.message || "Could not record this payment.";
+  }
+}
+
+async function deleteLiability(id) {
+  if (!confirm("Delete this liability? Any payments already made against it will be kept in the ledger but unlinked from it.")) return;
+  try {
+    await api.del(`/api/liabilities/${id}`);
+    state.liabilities = state.liabilities.filter((l) => l.id !== id);
+    state.transactions.forEach((t) => { if (t.liabilityId === id) t.liabilityId = null; });
+    await refreshActivity();
+    renderAll();
+    if (eventDetailId) openEventDetail(eventDetailId);
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+/* ---------------- Recent Activity (immutable audit trail of deletions/edits) ---------------- */
+const ACTIVITY_ENTITY_LABEL = {
+  transaction: "Transaction",
+  member: "Member",
+  event: "Event",
+  bill: "Bill",
+  liability: "Liability",
+};
+function formatActivityWhen(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso || "-";
+  return d.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+}
+function renderActivity() {
+  const deletedCount = state.activity.filter((a) => a.action === "delete").length;
+  const editedCount = state.activity.filter((a) => a.action === "update").length;
+  document.getElementById("activityStats").innerHTML = `
+    ${statCard("Total Logged Events", state.activity.length, "blue")}
+    ${statCard("Deletions", deletedCount, "red")}
+    ${statCard("Edits", editedCount, "amber")}
+  `;
+
+  const rows = [...state.activity].sort((a, b) => new Date(b.at) - new Date(a.at));
+  const tbody = document.querySelector("#activityTable tbody");
+  tbody.innerHTML = rows.map((a) => `
+    <tr>
+      <td>${formatActivityWhen(a.at)}</td>
+      <td><span class="badge ${a.action === "delete" ? "expense" : "partial"}">${a.action === "delete" ? "Deleted" : "Edited"}</span></td>
+      <td>${escapeHtml(ACTIVITY_ENTITY_LABEL[a.entityType] || a.entityType)}</td>
+      <td>${escapeHtml(a.summary)}</td>
+      <td>${escapeHtml(a.byName)}</td>
+    </tr>
+  `).join("");
+  document.getElementById("activityEmpty").style.display = rows.length ? "none" : "block";
 }
 
 function openBillDetail(key) {
@@ -1437,6 +2222,7 @@ async function deleteBill(id) {
   try {
     await api.del(`/api/bills/${id}`);
     state.bills = state.bills.filter((b) => b.id !== id);
+    await refreshActivity();
     renderAll();
     if (billDetailGroupKey !== null) renderBillThumbGrid(billsForGroup(billDetailGroupKey));
   } catch (err) {
@@ -1489,11 +2275,12 @@ document.getElementById("etType").addEventListener("change", refreshEventCategor
 document.getElementById("memberForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("mName").value.trim();
+  const designation = document.getElementById("mDesignation").value.trim();
   const phone = document.getElementById("mPhone").value.trim();
   const dues = Number(document.getElementById("mDues").value);
   if (!name || !dues) return;
   try {
-    const row = await api.post("/api/members", { name, phone, annualDues: dues });
+    const row = await api.post("/api/members", { name, designation, phone, annualDues: dues });
     state.members.push(normalizeMember(row));
     document.getElementById("memberForm").reset();
     renderAll();
@@ -1508,6 +2295,8 @@ async function deleteMember(id) {
     await api.del(`/api/members/${id}`);
     state.members = state.members.filter((m) => m.id !== id);
     state.transactions.forEach((t) => { if (t.memberId === id) t.memberId = null; });
+    state.liabilities.forEach((l) => { if (l.memberId === id) l.memberId = null; });
+    await refreshActivity();
     renderAll();
   } catch (err) {
     notifyError(err);
@@ -1520,6 +2309,7 @@ function openEditMemberModal(memberId) {
   if (!m) return;
   editMemberTargetId = memberId;
   document.getElementById("editMName").value = m.name || "";
+  document.getElementById("editMDesignation").value = m.designation || "";
   document.getElementById("editMPhone").value = m.phone || "";
   document.getElementById("editMDues").value = m.annualDues || 0;
   document.getElementById("editMemberOverlay").classList.add("open");
@@ -1534,11 +2324,13 @@ async function submitEditMember() {
   const phone = document.getElementById("editMPhone").value.trim();
   const dues = Number(document.getElementById("editMDues").value);
   if (!name || !dues || dues < 0) { alert("Please enter a valid name and dues amount."); return; }
+  const designation = document.getElementById("editMDesignation").value.trim();
   try {
-    const row = await api.put(`/api/members/${editMemberTargetId}`, { name, phone, annualDues: dues });
+    const row = await api.put(`/api/members/${editMemberTargetId}`, { name, designation, phone, annualDues: dues });
     const idx = state.members.findIndex((m) => m.id === editMemberTargetId);
     if (idx !== -1) state.members[idx] = normalizeMember(row);
     closeEditMemberModal();
+    await refreshActivity();
     renderAll();
   } catch (err) {
     notifyError(err);
@@ -1593,11 +2385,13 @@ function openMemberDetail(memberId) {
 
   const paid = memberPaid(m.id);
   const remaining = Math.max(m.annualDues - paid, 0);
+  const liabRemaining = memberLiabilitiesRemaining(m.id);
   document.getElementById("mdStats").innerHTML = `
     ${statCard("Annual Dues", fmt(m.annualDues), "blue")}
     ${statCard("Total Paid", fmt(paid), "green")}
-    ${statCard("Remaining", fmt(remaining), remaining > 0 ? "red" : "green")}
+    ${statCard("Dues Remaining", fmt(remaining), remaining > 0 ? "red" : "green")}
     ${statCard("Status", memberStatus(m).charAt(0).toUpperCase() + memberStatus(m).slice(1), "amber")}
+    ${liabRemaining > 0 ? statCard("Club Owes Them", fmt(liabRemaining), "amber") : ""}
   `;
 
   const txns = memberTransactions(m.id)
@@ -1664,6 +2458,9 @@ async function deleteTransaction(id) {
   try {
     await api.del(`/api/transactions/${id}`);
     state.transactions = state.transactions.filter((t) => t.id !== id);
+    // A deleted transaction might have been a liability payment — the
+    // server recomputes that liability's paid amount, so re-fetch it.
+    await Promise.all([refreshActivity(), refreshLiabilities()]);
     renderAll();
   } catch (err) {
     notifyError(err);
@@ -1671,6 +2468,8 @@ async function deleteTransaction(id) {
 }
 
 document.getElementById("monthFilter").addEventListener("change", renderTransactions);
+document.getElementById("txnTypeFilter").addEventListener("change", renderTransactions);
+document.getElementById("memberSort").addEventListener("change", renderMembers);
 
 /* ---------------- Events ---------------- */
 document.getElementById("eventForm").addEventListener("submit", async (e) => {
@@ -1717,8 +2516,10 @@ function openEventDetail(eventId) {
   refreshEventCategoryOptions();
   fillSelect(document.getElementById("etMethod"), PAYMENT_METHODS);
   document.getElementById("etDate").value = todayISO();
+  document.getElementById("elDate").value = todayISO();
 
   renderEventTransactionTable(ev.id);
+  renderEventLiabilityTable(ev.id);
   document.getElementById("edExportBtn").onclick = () => exportEventReportCSV(ev.id);
   document.getElementById("edDeleteBtn").onclick = () => deleteEvent(ev.id);
 
@@ -1745,11 +2546,39 @@ function renderEventTransactionTable(eventId) {
   `).join("");
   document.getElementById("edEmpty").style.display = rows.length ? "none" : "block";
 }
+function renderEventLiabilityTable(eventId) {
+  const rows = liabilitiesForEvent(eventId).sort((a, b) => {
+    if (a.status !== b.status) return a.status === "paid" ? 1 : -1;
+    return new Date(a.date) - new Date(b.date);
+  });
+  const tbody = document.querySelector("#edLiabilityTable tbody");
+  tbody.innerHTML = rows.map((l) => {
+    const remaining = liabilityRemaining(l);
+    const member = l.memberId ? memberById(l.memberId) : null;
+    return `
+      <tr>
+        <td>${l.date}</td>
+        <td>${escapeHtml(l.payeeName)}</td>
+        <td>${member ? escapeHtml(member.name) : "-"}</td>
+        <td class="num">${fmt(l.amount)}</td>
+        <td class="num" style="color:var(--green)">${fmt(l.paidAmount)}</td>
+        <td class="num" style="color:var(--red)">${fmt(remaining)}</td>
+        <td><span class="badge ${l.status === "paid" ? "paid" : "unpaid"}">${l.status === "paid" ? "Paid" : "Pending"}</span></td>
+        <td style="white-space:nowrap;">
+          ${remaining > 0 ? `<button class="btn small" onclick="openLiabilityPaymentModal('${l.id}')">Record Payment</button>` : ""}
+          <button class="btn secondary small" onclick="deleteLiability('${l.id}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  document.getElementById("edLiabilityEmpty").style.display = rows.length ? "none" : "block";
+}
 async function deleteEventTransaction(id) {
   if (!confirm("Delete this transaction?")) return;
   try {
     await api.del(`/api/transactions/${id}`);
     state.transactions = state.transactions.filter((t) => t.id !== id);
+    await Promise.all([refreshActivity(), refreshLiabilities()]);
     renderAll();
     if (eventDetailId) openEventDetail(eventDetailId);
   } catch (err) {
@@ -1763,7 +2592,9 @@ async function deleteEvent(eventId) {
     state.events = state.events.filter((e) => e.id !== eventId);
     state.transactions.forEach((t) => { if (t.eventId === eventId) t.eventId = null; });
     state.bills.forEach((b) => { if (b.eventId === eventId) b.eventId = null; });
+    state.liabilities.forEach((l) => { if (l.eventId === eventId) l.eventId = null; });
     closeEventDetail();
+    await refreshActivity();
     renderAll();
   } catch (err) {
     notifyError(err);
@@ -1799,9 +2630,34 @@ document.getElementById("eventTxnForm").addEventListener("submit", async (e) => 
   }
 });
 
+document.getElementById("eventLiabilityForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!eventDetailId) return;
+  const payeeName = document.getElementById("elPayee").value.trim();
+  const memberVal = document.getElementById("elMember").value;
+  const category = document.getElementById("elCategory").value.trim();
+  const amount = Number(document.getElementById("elAmount").value);
+  const date = document.getElementById("elDate").value;
+  const notes = document.getElementById("elNotes").value.trim();
+  if (!payeeName || !amount || amount <= 0 || !date) return;
+
+  try {
+    const row = await api.post("/api/liabilities", {
+      payeeName, memberId: memberVal === "none" ? null : memberVal, eventId: eventDetailId, category, amount, date, notes,
+    });
+    state.liabilities.push(normalizeLiability(row));
+    document.getElementById("eventLiabilityForm").reset();
+    document.getElementById("elDate").value = todayISO();
+    renderAll();
+    openEventDetail(eventDetailId);
+  } catch (err) {
+    notifyError(err);
+  }
+});
+
 /* ---------------- Settings ---------------- */
 async function saveClubName() {
-  const clubName = document.getElementById("clubNameInput").value.trim() || "Club Finance Tracker";
+  const clubName = document.getElementById("clubNameInput").value.trim() || "Rotaract Club of Madhyapur Finance Tracker";
   try {
     const row = await api.put("/api/settings", { clubName });
     Object.assign(state, normalizeSettings(row));
@@ -1812,9 +2668,10 @@ async function saveClubName() {
 }
 async function saveOpeningBalances() {
   const openingCash = Number(document.getElementById("openCash").value) || 0;
+  const openingOnline = Number(document.getElementById("openOnline").value) || 0;
   const openingBank = Number(document.getElementById("openBank").value) || 0;
   try {
-    const row = await api.put("/api/settings", { openingCash, openingBank });
+    const row = await api.put("/api/settings", { openingCash, openingOnline, openingBank });
     Object.assign(state, normalizeSettings(row));
     renderAll();
   } catch (err) {
@@ -1833,10 +2690,10 @@ function exportData() {
 
 /* ---------------- CSV Reports (export) ---------------- */
 function exportMembersSummaryCSV() {
-  const rows = [["Member ID", "Name", "Phone", "Annual Dues", "Paid", "Remaining", "Status"]];
-  state.members.forEach((m) => {
+  const rows = [["SN", "Member ID", "Name", "Designation", "Phone", "Annual Dues", "Paid", "Remaining", "Status"]];
+  [...state.members].sort(compareMembersByPosition).forEach((m, i) => {
     const paid = memberPaid(m.id);
-    rows.push([m.id, m.name, m.phone || "", m.annualDues, paid, Math.max(m.annualDues - paid, 0), memberStatus(m)]);
+    rows.push([i + 1, m.id, m.name, m.designation || "", m.phone || "", m.annualDues, paid, Math.max(m.annualDues - paid, 0), memberStatus(m)]);
   });
   downloadCSV(`membership-summary-${todayISO()}.csv`, rows);
 }
@@ -2117,6 +2974,7 @@ function buildCsvTransactions() {
     let account = mappedVal(row, "mapAccount");
     const accLower = account.toLowerCase();
     if (accLower.includes("bank")) account = "Bank";
+    else if (accLower.includes("online") || accLower.includes("esewa") || accLower.includes("khalti") || accLower.includes("wallet")) account = "Online";
     else if (accLower.includes("cash")) account = "Cash";
     else account = defaultAccount;
 
@@ -2146,7 +3004,7 @@ function updateCsvPreview() {
       <td>${escapeHtml(t.description)}</td>
       <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
       <td>${escapeHtml(t.category)}</td>
-      <td>${t.account}</td>
+      <td>${accountLabel(t.account)}</td>
       <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${fmt(t.amount)}</td>
     </tr>
   `).join("");
@@ -2207,6 +3065,7 @@ async function confirmCsvImport() {
 /* ---------------- Init ---------------- */
 document.getElementById("tDate").value = todayISO();
 document.getElementById("eDate").value = todayISO();
+document.getElementById("lDate").value = todayISO();
 refreshCategoryOptions();
 refreshEventCategoryOptions();
 
