@@ -17,6 +17,8 @@ app.use("/api/events", require("./routes/events"));
 app.use("/api/transactions", require("./routes/transactions"));
 app.use("/api/settings", require("./routes/settings"));
 app.use("/api/bills", require("./routes/bills"));
+app.use("/api/liabilities", require("./routes/liabilities"));
+app.use("/api/activity", require("./routes/activity"));
 
 // Serve the frontend (single static HTML file) so one deployed service
 // covers both the API and the UI — no separate static host needed.

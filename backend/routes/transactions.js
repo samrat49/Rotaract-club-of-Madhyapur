@@ -2,6 +2,7 @@ const router = require("express").Router();
 const pool = require("../db");
 const requireAuth = require("../middleware/auth");
 const asyncHandler = require("./asyncHandler");
+const { logActivity } = require("../lib/activityLog");
 
 router.use(requireAuth);
 
@@ -55,7 +56,38 @@ router.post("/bulk", asyncHandler(async (req, res) => {
 }));
 
 router.delete("/:id", asyncHandler(async (req, res) => {
+  const existing = await pool.query("select * from transactions where id = $1", [req.params.id]);
+  const txn = existing.rows[0];
+  if (!txn) return res.status(404).json({ error: "Transaction not found" });
+
   await pool.query("delete from transactions where id = $1", [req.params.id]);
+
+  // If this was a payment recorded against a liability, that liability's
+  // paid_amount/status must reflect the remaining linked payments — recompute
+  // it from scratch rather than trying to subtract, so it can never drift.
+  if (txn.liability_id) {
+    const sumRes = await pool.query(
+      "select coalesce(sum(amount), 0) as paid from transactions where liability_id = $1",
+      [txn.liability_id]
+    );
+    const liabRes = await pool.query("select * from liabilities where id = $1", [txn.liability_id]);
+    const liability = liabRes.rows[0];
+    if (liability) {
+      const newPaid = Number(sumRes.rows[0].paid);
+      const newStatus = newPaid >= Number(liability.amount) - 0.01 ? "paid" : "pending";
+      await pool.query("update liabilities set paid_amount = $1, status = $2 where id = $3", [newPaid, newStatus, liability.id]);
+    }
+  }
+
+  await logActivity({
+    action: "delete",
+    entityType: "transaction",
+    entityId: txn.id,
+    summary: `Deleted ${txn.type.toLowerCase()} transaction "${txn.description}" — Rs ${txn.amount} on ${txn.date}`,
+    before: txn,
+    user: req.user,
+  });
+
   res.json({ ok: true });
 }));
 

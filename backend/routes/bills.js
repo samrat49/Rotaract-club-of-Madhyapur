@@ -2,6 +2,7 @@ const router = require("express").Router();
 const pool = require("../db");
 const requireAuth = require("../middleware/auth");
 const asyncHandler = require("./asyncHandler");
+const { logActivity } = require("../lib/activityLog");
 
 router.use(requireAuth);
 
@@ -24,7 +25,23 @@ router.post("/", asyncHandler(async (req, res) => {
 }));
 
 router.delete("/:id", asyncHandler(async (req, res) => {
+  const before = await pool.query("select * from bills where id = $1", [req.params.id]);
+  const bill = before.rows[0];
+  if (!bill) return res.status(404).json({ error: "Bill not found" });
+
   await pool.query("delete from bills where id = $1", [req.params.id]);
+
+  // Log everything except the base64 file bytes — keeps the audit trail lean.
+  const { file_data, ...billMeta } = bill;
+  await logActivity({
+    action: "delete",
+    entityType: "bill",
+    entityId: bill.id,
+    summary: `Deleted bill "${bill.file_name}"${bill.description ? ` — ${bill.description}` : ""}`,
+    before: billMeta,
+    user: req.user,
+  });
+
   res.json({ ok: true });
 }));
 

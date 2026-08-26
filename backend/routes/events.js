@@ -2,6 +2,7 @@ const router = require("express").Router();
 const pool = require("../db");
 const requireAuth = require("../middleware/auth");
 const asyncHandler = require("./asyncHandler");
+const { logActivity } = require("../lib/activityLog");
 
 router.use(requireAuth);
 
@@ -22,9 +23,24 @@ router.post("/", asyncHandler(async (req, res) => {
 }));
 
 router.delete("/:id", asyncHandler(async (req, res) => {
+  const before = await pool.query("select * from events where id = $1", [req.params.id]);
+  const event = before.rows[0];
+  if (!event) return res.status(404).json({ error: "Event not found" });
+
   await pool.query("update transactions set event_id = null where event_id = $1", [req.params.id]);
   await pool.query("update bills set event_id = null where event_id = $1", [req.params.id]);
+  await pool.query("update liabilities set event_id = null where event_id = $1", [req.params.id]);
   await pool.query("delete from events where id = $1", [req.params.id]);
+
+  await logActivity({
+    action: "delete",
+    entityType: "event",
+    entityId: event.id,
+    summary: `Deleted event "${event.name}"`,
+    before: event,
+    user: req.user,
+  });
+
   res.json({ ok: true });
 }));
 

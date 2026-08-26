@@ -1,7 +1,7 @@
 {
   "name": "club-finance-backend",
   "version": "1.0.0",
-  "description": "Express + Postgres API for the Club Finance Tracker",
+  "description": "Express + Postgres API for the Rotaract Club of Madhyapur Finance Tracker",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

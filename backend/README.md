@@ -1,6 +1,6 @@
-# Club Finance Tracker — Backend
+# Rotaract Club of Madhyapur Finance Tracker — Backend
 
-Express + Postgres API for the Club Finance Tracker.
+Express + Postgres API for the Rotaract Club of Madhyapur Finance Tracker.
 
 ## Setup
 
