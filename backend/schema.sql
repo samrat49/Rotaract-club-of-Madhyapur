@@ -146,6 +146,50 @@ create index if not exists idx_activity_log_created on activity_log(created_at d
 alter table activity_log drop constraint if exists activity_log_entity_type_check;
 alter table activity_log add constraint activity_log_entity_type_check check (entity_type in ('transaction','member','event','bill','liability'));
 
+-- eSewa monthly statement imports — a standalone read-only ledger of what
+-- eSewa's own "Statement Report" export reports each month. Deliberately
+-- kept separate from `transactions` / account balances: this is a copy of
+-- the merchant's records for reference, not a manually entered transaction.
+create table if not exists esewa_uploads (
+  id uuid primary key default gen_random_uuid(),
+  file_name text not null,
+  from_date_raw text,
+  to_date_raw text,
+  parsed_count int not null default 0,
+  inserted_count int not null default 0,
+  duplicate_count int not null default 0,
+  uploaded_by_id uuid,
+  uploaded_by_name text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists esewa_transactions (
+  id uuid primary key default gen_random_uuid(),
+  upload_id uuid references esewa_uploads(id) on delete cascade,
+  reference_code text,
+  txn_date date not null,
+  txn_time time,
+  description text not null,
+  type text not null check (type in ('Income','Expense')),
+  amount numeric not null check (amount > 0),
+  balance numeric,
+  status text,
+  channel text,
+  month_key text not null,
+  created_at timestamptz not null default now(),
+  -- Lets re-uploading an overlapping date range silently skip rows already
+  -- on file, instead of double-counting income/expense.
+  unique (reference_code, txn_date, txn_time, description, type, amount)
+);
+
+create index if not exists idx_esewa_txn_month on esewa_transactions(month_key);
+create index if not exists idx_esewa_txn_upload on esewa_transactions(upload_id);
+
+-- Migration for databases created before eSewa uploads were a loggable
+-- entity type.
+alter table activity_log drop constraint if exists activity_log_entity_type_check;
+alter table activity_log add constraint activity_log_entity_type_check check (entity_type in ('transaction','member','event','bill','liability','esewa'));
+
 create or replace function prevent_activity_log_mutation() returns trigger as $$
 begin
   raise exception 'activity_log rows are immutable and cannot be updated or deleted';

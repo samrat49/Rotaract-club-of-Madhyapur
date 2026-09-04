@@ -22,3 +22,8 @@ build/
 
 # Database backups
 backend/*.sql
+
+# Real eSewa statement exports dropped in the repo for local testing —
+# contains real transaction data, never commit these.
+*.xls
+*.xlsx

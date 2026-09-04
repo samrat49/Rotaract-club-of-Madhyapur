@@ -538,6 +538,10 @@
     <svg class="tab-icon" viewBox="0 0 24 24"><path d="M6 3h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3V3z"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12.5" x2="15" y2="12.5"/></svg>
     Bills
   </button>
+  <button class="tab-btn" data-tab="esewa">
+    <svg class="tab-icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="7" cy="14.5" r="1.2"/></svg>
+    eSewa
+  </button>
   <button class="tab-btn" data-tab="liabilities">
     <svg class="tab-icon" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>
     Liabilities
@@ -744,6 +748,60 @@
         </p>
         <div class="bill-grid" id="billGrid"></div>
         <div id="billEmpty" class="empty" style="display:none;">Create an event from the Events tab, then come back here to attach bills to it.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESEWA -->
+  <section id="tab-esewa" class="tab">
+    <div class="stat-grid" id="esewaTopStats"></div>
+
+    <div class="card">
+      <div class="card-header"><h2>Upload Monthly Statement</h2></div>
+      <div class="card-body">
+        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+          Download "Statement Report" (.xls) from the eSewa app/merchant portal for the month and upload it here. Rows are matched by reference code, date/time, description and amount, so uploading a file that overlaps a previous upload will not create duplicates.
+        </p>
+        <form class="inline-form" id="esewaUploadForm">
+          <div class="field"><label>eSewa Statement File</label><input type="file" id="esewaFile" accept=".xls,.xlsx" required /></div>
+          <div class="field"><button type="submit" class="btn" id="esewaUploadBtn">Upload &amp; Import</button></div>
+        </form>
+        <div id="esewaUploadNote" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>eSewa Transactions</h2>
+        <div class="header-right">
+          <select id="esewaMonthFilter" class="month-filter"></select>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="esewaSummaryBlock" style="display:none;">
+          <div class="summary-highlight">
+            <h3 id="esewaSummaryTitle">Month</h3>
+            <div class="stat-grid" id="esewaSummaryStats" style="margin-bottom:0;"></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="esewaTable">
+            <thead><tr><th>Date</th><th>Time</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th><th>Channel</th><th>Ref. Code</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="esewaEmpty" class="empty" style="display:none;">No eSewa statement uploaded for this month yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Upload History</h2></div>
+      <div class="card-body table-wrap">
+        <table id="esewaUploadTable">
+          <thead><tr><th>Uploaded</th><th>File</th><th>Statement Range</th><th>Rows</th><th>New</th><th>Duplicates</th><th>By</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="esewaUploadEmpty" class="empty" style="display:none;">No statements uploaded yet.</div>
       </div>
     </div>
   </section>
@@ -1182,6 +1240,8 @@ function defaultState() {
     bills: [],
     liabilities: [],
     activity: [],
+    esewaTransactions: [],
+    esewaUploads: [],
   };
 }
 
@@ -1328,6 +1388,22 @@ function normalizeActivity(r) {
     at: r.created_at,
   };
 }
+function normalizeEsewaTransaction(r) {
+  return {
+    id: r.id, uploadId: r.upload_id, referenceCode: r.reference_code || "",
+    date: String(r.txn_date).slice(0, 10), time: r.txn_time || "",
+    description: r.description, type: r.type, amount: Number(r.amount) || 0,
+    balance: r.balance !== null && r.balance !== undefined ? Number(r.balance) : null,
+    status: r.status || "", channel: r.channel || "", monthKey: r.month_key,
+  };
+}
+function normalizeEsewaUpload(r) {
+  return {
+    id: r.id, fileName: r.file_name, fromDateRaw: r.from_date_raw || "", toDateRaw: r.to_date_raw || "",
+    parsedCount: r.parsed_count || 0, insertedCount: r.inserted_count || 0, duplicateCount: r.duplicate_count || 0,
+    byName: r.uploaded_by_name || "Unknown", at: r.created_at,
+  };
+}
 function normalizeLiability(r) {
   return {
     id: r.id,
@@ -1363,9 +1439,25 @@ async function loadAllData() {
     }
   );
   // Fetched separately and non-fatally: these features need DB migrations
-  // (activity_log / liabilities tables) that may not be applied everywhere
-  // yet, and a hiccup here should never block sign-in or the rest of the app.
-  await Promise.all([refreshActivity(), refreshLiabilities()]);
+  // (activity_log / liabilities / esewa tables) that may not be applied
+  // everywhere yet, and a hiccup here should never block sign-in or the
+  // rest of the app.
+  await Promise.all([refreshActivity(), refreshLiabilities(), refreshEsewa()]);
+}
+
+// Re-fetches eSewa uploads + transactions — called after import/delete so
+// the eSewa tab reflects the server's state.
+async function refreshEsewa() {
+  try {
+    const [transactions, uploads] = await Promise.all([
+      api.get("/api/esewa/transactions"),
+      api.get("/api/esewa/uploads"),
+    ]);
+    state.esewaTransactions = (transactions || []).map(normalizeEsewaTransaction);
+    state.esewaUploads = (uploads || []).map(normalizeEsewaUpload);
+  } catch (err) {
+    console.error("Could not refresh eSewa data:", err);
+  }
 }
 
 // Re-fetches just the activity log — called after any delete/edit so the
@@ -1644,6 +1736,7 @@ function renderAll() {
   renderTransactions();
   renderEvents();
   renderBills();
+  renderEsewa();
   renderLiabilities();
   renderActivity();
 }
@@ -1916,6 +2009,102 @@ function renderBills() {
 
   document.getElementById("billEmpty").style.display = state.events.length === 0 && state.bills.length === 0 ? "block" : "none";
 }
+
+/* ---------------- eSewa (standalone import of eSewa's own Statement Report —
+   never touches Cash/Online/Bank balances, just a copy of what eSewa reports
+   each month) ---------------- */
+function esewaMonthlyTotals() {
+  const map = new Map();
+  for (const t of state.esewaTransactions) {
+    const key = t.monthKey;
+    if (!map.has(key)) map.set(key, { key, label: monthLabel(t.date), income: 0, expense: 0 });
+    const row = map.get(key);
+    if (t.type === "Income") row.income += t.amount; else row.expense += t.amount;
+  }
+  // Always offer the current calendar month, even with zero rows yet — this
+  // is what lets the page default to it and "switch" on its own once a new
+  // month starts, without the treasurer having to remember to change it.
+  const curKey = currentMonthKey();
+  if (!map.has(curKey)) map.set(curKey, { key: curKey, label: monthLabel(todayISO()), income: 0, expense: 0 });
+  return [...map.values()].sort((a, b) => (a.key < b.key ? 1 : -1));
+}
+function esewaTxnSortKey(t) { return `${t.date} ${t.time || "00:00:00"}`; }
+function latestEsewaBalance() {
+  const withBalance = state.esewaTransactions.filter((t) => t.balance !== null);
+  if (!withBalance.length) return null;
+  return [...withBalance].sort((a, b) => (esewaTxnSortKey(a) < esewaTxnSortKey(b) ? 1 : -1))[0].balance;
+}
+
+let esewaMonthInitialized = false;
+
+function renderEsewa() {
+  const balance = latestEsewaBalance();
+  document.getElementById("esewaTopStats").innerHTML = `
+    ${statCard("eSewa Wallet Balance", balance !== null ? fmt(balance) : "—", "green")}
+    ${statCard("Statements Uploaded", state.esewaUploads.length, "blue")}
+    ${statCard("Transactions on File", state.esewaTransactions.length, "blue")}
+  `;
+
+  const months = esewaMonthlyTotals();
+  const filterEl = document.getElementById("esewaMonthFilter");
+  const prevValue = filterEl.value;
+  filterEl.innerHTML = months.map((m) => `<option value="${m.key}">${m.label}</option>`).join("");
+  if (!esewaMonthInitialized) {
+    // First render this session: always default to the current month.
+    filterEl.value = currentMonthKey();
+    esewaMonthInitialized = true;
+  } else {
+    filterEl.value = [...filterEl.options].some((o) => o.value === prevValue) ? prevValue : currentMonthKey();
+  }
+
+  const filterVal = filterEl.value;
+  const monthRow = months.find((m) => m.key === filterVal) || { income: 0, expense: 0, label: filterVal };
+  const net = monthRow.income - monthRow.expense;
+  document.getElementById("esewaSummaryTitle").textContent = monthRow.label;
+  document.getElementById("esewaSummaryStats").innerHTML = `
+    ${statCard("Total Income", fmt(monthRow.income), "green")}
+    ${statCard("Total Expenses", fmt(monthRow.expense), "red")}
+    ${statCard("Net Change", (net >= 0 ? "+" : "") + fmt(net), net >= 0 ? "green" : "red")}
+  `;
+  document.getElementById("esewaSummaryBlock").style.display = "block";
+
+  const rows = state.esewaTransactions
+    .filter((t) => t.monthKey === filterVal)
+    .sort((a, b) => (esewaTxnSortKey(a) < esewaTxnSortKey(b) ? 1 : -1));
+
+  const tbody = document.querySelector("#esewaTable tbody");
+  tbody.innerHTML = rows.map((t) => `
+    <tr>
+      <td>${t.date}</td>
+      <td>${t.time || "-"}</td>
+      <td>${escapeHtml(t.description)}</td>
+      <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
+      <td class="num">${t.balance !== null ? fmt(t.balance) : "-"}</td>
+      <td>${escapeHtml(t.channel || "-")}</td>
+      <td>${escapeHtml(t.referenceCode || "-")}</td>
+      <td><button class="btn secondary small" onclick="deleteEsewaTransaction('${t.id}')">Delete</button></td>
+    </tr>
+  `).join("");
+  document.getElementById("esewaEmpty").style.display = rows.length ? "none" : "block";
+
+  const uploadsSorted = [...state.esewaUploads].sort((a, b) => new Date(b.at) - new Date(a.at));
+  const utbody = document.querySelector("#esewaUploadTable tbody");
+  utbody.innerHTML = uploadsSorted.map((u) => `
+    <tr>
+      <td>${new Date(u.at).toLocaleString()}</td>
+      <td>${escapeHtml(u.fileName)}</td>
+      <td style="font-size:12px; color:var(--muted);">${escapeHtml(u.fromDateRaw)}${u.toDateRaw ? " → " + escapeHtml(u.toDateRaw) : ""}</td>
+      <td class="num">${u.parsedCount}</td>
+      <td class="num" style="color:var(--green)">${u.insertedCount}</td>
+      <td class="num" style="color:var(--muted)">${u.duplicateCount}</td>
+      <td>${escapeHtml(u.byName)}</td>
+      <td><button class="btn secondary small" onclick="deleteEsewaUpload('${u.id}')">Delete</button></td>
+    </tr>
+  `).join("");
+  document.getElementById("esewaUploadEmpty").style.display = uploadsSorted.length ? "none" : "block";
+}
+document.getElementById("esewaMonthFilter").addEventListener("change", renderEsewa);
 
 /* ---------------- Liabilities ---------------- */
 function renderLiabilities() {
@@ -2225,6 +2414,63 @@ async function deleteBill(id) {
     await refreshActivity();
     renderAll();
     if (billDetailGroupKey !== null) renderBillThumbGrid(billsForGroup(billDetailGroupKey));
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+/* ---------------- eSewa upload/delete ---------------- */
+document.getElementById("esewaUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fileInput = document.getElementById("esewaFile");
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const btn = document.getElementById("esewaUploadBtn");
+  const noteEl = document.getElementById("esewaUploadNote");
+  btn.disabled = true;
+  btn.textContent = "Importing...";
+  noteEl.textContent = "";
+
+  try {
+    const fileData = await readFileAsDataURL(file);
+    const result = await api.post("/api/esewa/upload", { fileName: file.name, fileData });
+    state.esewaTransactions.push(...result.transactions.map(normalizeEsewaTransaction));
+    state.esewaUploads.push(normalizeEsewaUpload(result.upload));
+    const parts = [`Imported ${result.transactions.length} new transaction${result.transactions.length === 1 ? "" : "s"}.`];
+    if (result.duplicateCount) parts.push(`${result.duplicateCount} already on file, skipped.`);
+    if (result.skippedNonComplete) parts.push(`${result.skippedNonComplete} not-yet-complete row(s) skipped.`);
+    noteEl.textContent = parts.join(" ");
+    e.target.reset();
+    renderAll();
+  } catch (err) {
+    noteEl.textContent = err.message || "Could not import this file — please try again.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Upload & Import";
+  }
+});
+
+async function deleteEsewaTransaction(id) {
+  if (!confirm("Delete this eSewa transaction?")) return;
+  try {
+    await api.del(`/api/esewa/transactions/${id}`);
+    state.esewaTransactions = state.esewaTransactions.filter((t) => t.id !== id);
+    await refreshActivity();
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
+}
+
+async function deleteEsewaUpload(id) {
+  if (!confirm("Delete this upload and every transaction it imported?")) return;
+  try {
+    await api.del(`/api/esewa/uploads/${id}`);
+    state.esewaUploads = state.esewaUploads.filter((u) => u.id !== id);
+    state.esewaTransactions = state.esewaTransactions.filter((t) => t.uploadId !== id);
+    await refreshActivity();
+    renderAll();
   } catch (err) {
     notifyError(err);
   }
