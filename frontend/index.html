@@ -6,102 +6,50 @@
 <title>Rotaract Club of Madhyapur Finance Tracker</title>
 <link rel="icon" type="image/png" href="logo.png" />
 <script>
-  // Applied as early as possible (before the CSS below paints) so a saved
-  // Light/Dark choice never flashes the OS-preferred theme first.
+  // Runs before the CSS below even paints, so a signed-in visitor never sees
+  // the login form flash on screen while we're re-checking their saved
+  // session — they see a quiet loading state instead, right from the first
+  // frame. showAuthScreen() (later, in the main script) clears this once we
+  // know whether that check succeeded or failed.
   (function () {
     try {
-      var t = localStorage.getItem("theme");
-      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      var raw = localStorage.getItem("cft-auth-v1");
+      var auth = raw ? JSON.parse(raw) : null;
+      if (auth && auth.token) document.documentElement.setAttribute("data-boot", "checking");
     } catch (e) {}
   })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
     --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-    --blue: #4f46e5;
-    --blue-dark: #4338ca;
-    --blue-light: #eef1ff;
-    --green: #059669;
-    --green-light: #ecfdf5;
-    --red: #dc2626;
-    --red-light: #fef2f2;
-    --amber: #d97706;
-    --amber-light: #fffbeb;
-
-    --bg: #f5f6fb;
-    --card: #ffffff;
-    --input-bg: #ffffff;
-    --surface-2: #f1f3f9;
-    --border: #e6e8f2;
-    --text: #0f172a;
-    --muted: #64748b;
-
-    --radius-sm: 9px;
-    --radius: 14px;
-    --radius-lg: 20px;
-    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-    --shadow: 0 6px 20px -6px rgba(15, 23, 42, 0.10), 0 2px 8px -2px rgba(15, 23, 42, 0.05);
-    --shadow-lg: 0 24px 48px -16px rgba(15, 23, 42, 0.28);
-    --ring: rgba(79, 70, 229, 0.28);
-
-    color-scheme: light;
-  }
-
-  /* Dark theme tokens apply automatically when the OS/browser prefers dark
-     (unless the user explicitly picked Light in Settings), and always when
-     the user explicitly picked Dark — see setTheme() in the script below,
-     which toggles [data-theme] on <html>. */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --blue: #818cf8;
-      --blue-dark: #6366f1;
-      --blue-light: rgba(129, 140, 248, 0.14);
-      --green: #34d399;
-      --green-light: rgba(52, 211, 153, 0.12);
-      --red: #f87171;
-      --red-light: rgba(248, 113, 113, 0.12);
-      --amber: #fbbf24;
-      --amber-light: rgba(251, 191, 36, 0.12);
-
-      --bg: #0a0b12;
-      --card: #14151f;
-      --input-bg: #1a1c29;
-      --surface-2: #1c1e2b;
-      --border: #262837;
-      --text: #f1f5f9;
-      --muted: #9398ac;
-
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-      --shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.3);
-      --shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
-      --ring: rgba(129, 140, 248, 0.35);
-
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
     --blue: #818cf8;
     --blue-dark: #6366f1;
-    --blue-light: rgba(129, 140, 248, 0.14);
+    --blue-light: rgba(129, 140, 248, 0.16);
+    --purple: #c084fc;
+    --pink: #f472b6;
+    --teal: #2dd4bf;
     --green: #34d399;
-    --green-light: rgba(52, 211, 153, 0.12);
+    --green-light: rgba(52, 211, 153, 0.14);
     --red: #f87171;
-    --red-light: rgba(248, 113, 113, 0.12);
+    --red-light: rgba(248, 113, 113, 0.14);
     --amber: #fbbf24;
-    --amber-light: rgba(251, 191, 36, 0.12);
+    --amber-light: rgba(251, 191, 36, 0.14);
 
-    --bg: #0a0b12;
-    --card: #14151f;
-    --input-bg: #1a1c29;
-    --surface-2: #1c1e2b;
-    --border: #262837;
-    --text: #f1f5f9;
-    --muted: #9398ac;
+    --bg: #05060d;
+    --card: #12131f;
+    --input-bg: #171927;
+    --surface-2: #1a1c2c;
+    --border: rgba(255, 255, 255, 0.09);
+    --text: #f4f5fb;
+    --muted: #9297b8;
 
+    --radius-sm: 10px;
+    --radius: 16px;
+    --radius-lg: 22px;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
@@ -122,105 +70,205 @@
   body {
     margin: 0;
     font-family: var(--font-sans);
-    background:
-      radial-gradient(760px 380px at 8% -8%, var(--blue-light), transparent 60%),
-      radial-gradient(620px 320px at 100% 0%, var(--green-light), transparent 55%),
-      var(--bg);
-    background-attachment: fixed;
+    font-size: 15.5px;
+    line-height: 1.55;
+    background: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    transition: background-color .2s ease, color .2s ease;
+  }
+
+  .app-bg {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: -2; pointer-events: none;
+  }
+  .app-scrim {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(1000px 560px at 6% 0%, rgba(99,102,241,.16), transparent 55%),
+      linear-gradient(115deg, rgba(4,5,12,.80) 0%, rgba(6,7,17,.88) 40%, rgba(5,6,14,.95) 100%);
   }
 
   a { color: var(--blue); }
-  h1, h2, h3 { font-family: var(--font-sans); letter-spacing: -0.01em; }
+  h1, h2, h3 { font-family: var(--font-sans); letter-spacing: -0.015em; }
 
   button, input, select, textarea { font-family: inherit; }
   :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
 
   header {
-    background: color-mix(in srgb, var(--card) 88%, transparent);
-    backdrop-filter: blur(14px) saturate(160%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    background: color-mix(in srgb, var(--card) 62%, transparent);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
     border-bottom: 1px solid var(--border);
-    padding: 14px 22px;
+    padding: 16px 26px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 20;
   }
-  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
   .brand-mark {
-    width: 42px; height: 42px; border-radius: 11px; flex: none;
+    width: 48px; height: 48px; border-radius: 13px; flex: none;
     background: #ffffff;
     display: flex; align-items: center; justify-content: center;
-    padding: 3px; box-shadow: var(--shadow);
+    padding: 4px; box-shadow: var(--shadow);
   }
-  .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 8px; }
-  header h1 { font-size: 18px; margin: 0; font-weight: 800; }
-  header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 9px; }
+  header h1 { font-size: 19px; margin: 0; font-weight: 800; }
+  header .sub {
+    color: var(--muted); font-size: 11px; margin-top: 4px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  .header-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
-  nav {
-    display: flex;
-    gap: 2px;
-    background: color-mix(in srgb, var(--card) 88%, transparent);
-    backdrop-filter: blur(14px) saturate(160%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
-    border-bottom: 1px solid var(--border);
-    padding: 8px 22px;
-    overflow-x: auto;
-    position: sticky;
-    top: 66px;
-    z-index: 9;
-    scrollbar-width: none;
+  .icon-btn {
+    position: relative; width: 40px; height: 40px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
   }
-  nav::-webkit-scrollbar { display: none; }
-  nav button {
-    background: none;
-    border: none;
-    padding: 9px 15px;
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    border-radius: 999px;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
+  .icon-btn:hover { background: var(--card); color: var(--text); }
+  .icon-btn .dot {
+    position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 999px;
+    background: var(--red); border: 2px solid var(--bg);
+  }
+
+  .profile-chip {
+    display: flex; align-items: center; gap: 10px; background: none; border: none;
+    cursor: pointer; padding: 4px 6px 4px 4px; border-radius: 999px; color: var(--text);
+    transition: background-color .15s ease;
+  }
+  .profile-chip:hover { background: var(--surface-2); }
+  .profile-avatar {
+    width: 36px; height: 36px; border-radius: 999px; flex: none;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    color: #fff; font-size: 13px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .profile-meta { display: flex; flex-direction: column; text-align: left; line-height: 1.3; min-width: 0; }
+  .profile-name { display: block; font-size: 13px; font-weight: 700; }
+  .profile-email { display: block; font-size: 11px; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .profile-chevron { color: var(--muted); flex: none; }
+
+  .profile-menu {
+    position: absolute; top: calc(100% + 10px); right: 0; width: 220px;
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow-lg); padding: 8px; display: none; z-index: 30;
+    animation: fadeIn .15s ease;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-header {
+    flex-direction: column; align-items: flex-start; gap: 1px;
+    padding: 8px 10px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px; border-radius: 8px 8px 0 0;
+  }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; }
+  .profile-menu .pm-email { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .profile-menu button {
+    width: 100%; display: flex; align-items: center; gap: 9px; background: none; border: none;
+    padding: 9px 10px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--text);
+    cursor: pointer; text-align: left;
+  }
+  .profile-menu button:hover { background: var(--surface-2); }
+  .profile-menu button.danger { color: var(--red); }
+
+  .kebab-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    width: 30px; height: 30px; border-radius: 8px; display: inline-flex;
+    align-items: center; justify-content: center; transition: background-color .15s ease, color .15s ease;
+  }
+  .kebab-btn:hover { background: var(--surface-2); color: var(--text); }
+  .kebab-menu {
+    position: fixed; width: 208px; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); padding: 6px;
+    display: none; z-index: 400;
+  }
+  .kebab-menu.open { display: block; animation: fadeIn .12s ease; }
+  .kebab-menu button {
+    width: 100%; display: flex; align-items: center; gap: 9px; background: none; border: none;
+    padding: 9px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text);
+    cursor: pointer; text-align: left;
+  }
+  .kebab-menu button:hover { background: var(--surface-2); }
+  .kebab-menu button.danger { color: var(--red); }
+  .kebab-menu .kebab-note {
+    display: none; align-items: center; gap: 9px; padding: 9px 10px;
+    font-size: 12.5px; color: var(--green); font-weight: 700;
+  }
+
+  .app-shell { display: flex; align-items: flex-start; }
+
+  .sidebar {
+    flex: none; width: 246px; box-sizing: border-box;
+    position: sticky; top: 81px; height: calc(100vh - 81px);
+    display: flex; flex-direction: column;
+    padding: 18px 12px 16px;
+    background: color-mix(in srgb, var(--card) 34%, transparent);
+    border-right: 1px solid var(--border);
+    overflow-y: auto; overflow-x: hidden;
+    scrollbar-width: none;
+    z-index: 5;
+  }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar .tab-btn {
+    background: none; border: none; width: 100%;
+    padding: 11px 14px; margin-bottom: 3px;
+    font-size: 14px; font-weight: 600; color: var(--muted); text-align: left;
+    cursor: pointer; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
     transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
   }
-  nav button:hover { color: var(--text); background: var(--surface-2); }
-  nav button.active {
+  .sidebar .tab-btn:hover { color: var(--text); background: var(--surface-2); }
+  .sidebar .tab-btn.active {
     color: white;
     background: linear-gradient(135deg, var(--blue), var(--blue-dark));
-    box-shadow: 0 4px 14px -3px var(--ring);
+    box-shadow: 0 6px 16px -4px var(--ring);
   }
   .tab-icon {
-    width: 15px; height: 15px; flex: none;
+    width: 16px; height: 16px; flex: none;
     fill: none; stroke: currentColor; stroke-width: 2;
     stroke-linecap: round; stroke-linejoin: round;
   }
 
-  main { max-width: 1120px; margin: 0 auto; padding: 24px 22px 60px; }
+  .sidebar-footer {
+    margin-top: auto; position: relative; padding: 26px 10px 6px; overflow: hidden;
+    min-height: 130px;
+  }
+  .sidebar-footer svg.silhouette { position: absolute; left: -6px; bottom: -4px; width: 105%; height: auto; opacity: .35; }
+  .sidebar-footer .sf-text {
+    position: relative; font-family: 'Caveat', cursive; font-weight: 600;
+    font-size: 22px; line-height: 1.2; color: rgba(226,229,245,.8);
+    transform: rotate(-2deg); text-shadow: 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  main { flex: 1 1 auto; min-width: 0; padding: 26px clamp(16px, 3vw, 32px) 64px; }
   .tab { display: none; animation: fadeUp .28s ease; }
   .tab.active { display: block; }
 
+  @media (max-width: 880px) {
+    .app-shell { flex-direction: column; }
+    .sidebar {
+      position: static; width: 100%; height: auto; flex-direction: row; flex-wrap: nowrap;
+      overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid var(--border);
+      padding: 10px 12px; gap: 4px;
+    }
+    .sidebar .tab-btn { width: auto; white-space: nowrap; margin-bottom: 0; }
+    .sidebar-footer { display: none; }
+    .profile-meta { display: none; }
+  }
+
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
-    gap: 12px;
-    margin-bottom: 22px;
+    grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
   }
   .stat-card {
     position: relative; background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px 17px 15px; overflow: hidden;
+    border-radius: var(--radius); padding: 18px 19px 17px; overflow: hidden;
     box-shadow: var(--shadow-sm); transition: transform .18s ease, box-shadow .18s ease;
   }
   .stat-card::before {
@@ -228,8 +276,8 @@
     background: var(--muted); opacity: .35;
   }
   .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-  .stat-card .label { font-size: 11.5px; color: var(--muted); margin-bottom: 7px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
-  .stat-card .value { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .stat-card .label { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .stat-card .value { font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.015em; }
   .stat-card.green .value { color: var(--green); }
   .stat-card.green::before { background: var(--green); opacity: 1; }
   .stat-card.red .value { color: var(--red); }
@@ -239,23 +287,136 @@
   .stat-card.amber .value { color: var(--amber); }
   .stat-card.amber::before { background: var(--amber); opacity: 1; }
 
+  /* ---------------- Dashboard (Overview tab) ---------------- */
+  .ov-greeting-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; margin-bottom: 22px;
+  }
+  .ov-greeting-eyebrow { font-size: 13.5px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+  .ov-greeting h2 { font-size: 27px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.015em; }
+  .ov-greeting .grad-text {
+    background: linear-gradient(90deg, var(--blue), var(--purple) 60%, var(--pink));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .ov-greeting-sub { font-size: 13.5px; color: var(--muted); }
+  .ov-date-pill {
+    display: flex; align-items: center; gap: 11px; background: var(--card);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px;
+    box-shadow: var(--shadow-sm); flex: none;
+  }
+  .ov-date-pill .icon-wrap {
+    width: 34px; height: 34px; border-radius: 10px; flex: none;
+    background: var(--blue-light); color: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ov-date-pill .od-label { font-size: 10.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .ov-date-pill .od-value { font-size: 13.5px; font-weight: 700; margin-top: 1px; }
+  .ov-date-pill .od-day {
+    margin-left: 4px; font-size: 11px; font-weight: 700; color: var(--blue);
+    background: var(--blue-light); padding: 3px 9px; border-radius: 999px;
+  }
+
+  .ov-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(154px, 1fr));
+    gap: 14px; margin-bottom: 20px;
+  }
+  .ov-card {
+    position: relative; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 19px 16px; overflow: hidden;
+    box-shadow: var(--shadow-sm); transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .ov-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .ov-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .ov-card-icon {
+    width: 38px; height: 38px; border-radius: 11px; flex: none;
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .ov-card-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .ov-card-value { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
+  .ov-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .ov-card-change { font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; }
+  .ov-card-change.good { color: var(--green); }
+  .ov-card-change.bad { color: var(--red); }
+  .ov-card-change.flat { color: var(--muted); }
+  .ov-card-change-note { font-size: 10.5px; color: var(--muted); }
+  .ov-card-spark { flex: none; opacity: .85; }
+
+  .ov-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 700px) { .ov-grid { grid-template-columns: 1fr; } }
+
+  .ov-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 18px 20px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column;
+  }
+  .ov-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 8px; }
+  .ov-panel-title { font-size: 14.5px; font-weight: 800; display: flex; align-items: center; gap: 9px; }
+  .ov-panel-title .ov-panel-ic {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--blue-light); color: var(--blue);
+    display: flex; align-items: center; justify-content: center; flex: none;
+  }
+  .ov-panel-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+  .ov-donut-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; justify-content: center; flex: 1; }
+  .ov-donut { position: relative; width: 148px; height: 148px; flex: none; border-radius: 999px; }
+  .ov-donut-hole {
+    position: absolute; inset: 17px; background: var(--card); border-radius: 999px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .ov-donut-hole .dh-pct { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .ov-donut-hole .dh-label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }
+  .ov-donut-hole .dh-net { font-size: 12.5px; font-weight: 800; margin-top: 3px; }
+  .ov-legend { display: flex; flex-direction: column; gap: 12px; }
+  .ov-legend-row { display: flex; align-items: center; gap: 10px; }
+  .ov-legend-dot { width: 10px; height: 10px; border-radius: 999px; flex: none; }
+  .ov-legend-value { font-size: 14px; font-weight: 800; }
+  .ov-legend-label { font-size: 11.5px; color: var(--muted); }
+
+  .ov-linechart { flex: 1; display: flex; flex-direction: column; }
+  .ov-linechart svg { width: 100%; height: auto; overflow: visible; }
+  .ov-linechart .lc-grid { stroke: var(--border); stroke-width: 1; }
+  .ov-linechart .lc-axis-label { fill: var(--muted); font-size: 10.5px; font-family: var(--font-sans); }
+  .ov-linechart .lc-month-label { fill: var(--muted); font-size: 10.5px; font-family: var(--font-sans); }
+  .ov-linechart .lc-dot { fill: var(--blue); stroke: var(--card); stroke-width: 2; }
+
+  .rt-icon {
+    width: 22px; height: 22px; border-radius: 999px; flex: none;
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .rt-icon svg { width: 11px; height: 11px; }
+  .ov-tables-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 800px) { .ov-tables-grid { grid-template-columns: 1fr; } }
+  .ov-table-card { margin-bottom: 0; display: flex; flex-direction: column; }
+  .ov-table-card .card-body { padding: 0; }
+  .scroll-table { max-height: 340px; overflow-y: auto; }
+  .compact-table table { font-size: 12.5px; table-layout: fixed; width: 100%; }
+  .compact-table th, .compact-table td { padding: 8px 12px; overflow: hidden; white-space: nowrap; }
+  .compact-table thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
+  #recentTable th:nth-child(1), #recentTable td:nth-child(1) { width: 92px; }
+  #recentTable th:nth-child(3), #recentTable td:nth-child(3) { width: 84px; text-align: right; }
+
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    margin-bottom: 22px; overflow: hidden; box-shadow: var(--shadow-sm);
+    margin-bottom: 24px; overflow: hidden; box-shadow: var(--shadow-sm);
   }
   .card-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 15px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
+    padding: 17px 22px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 9px;
     background: color-mix(in srgb, var(--surface-2) 55%, transparent);
   }
-  .card-header h2 { font-size: 14.5px; margin: 0; font-weight: 700; }
+  .card-header h2 { font-size: 15.5px; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
   .card-header .header-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .card-body { padding: 20px; }
+  .card-body { padding: 22px; }
 
   button.btn {
     background: linear-gradient(135deg, var(--blue), var(--blue-dark));
-    color: white; border: none; padding: 9px 16px;
-    border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; cursor: pointer;
+    color: white; border: none; padding: 10px 18px;
+    border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 700; cursor: pointer;
     box-shadow: 0 2px 8px -2px var(--ring);
     transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease, background .15s ease;
   }
@@ -267,7 +428,7 @@
   button.btn.secondary:hover { background: var(--surface-2); box-shadow: none; transform: translateY(-1px); }
   button.btn.secondary.active { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border-color: transparent; }
   button.btn.danger { background: linear-gradient(135deg, var(--red), #b91c1c); box-shadow: 0 2px 8px -2px rgba(220,38,38,.35); }
-  button.btn.small { padding: 6px 11px; font-size: 12px; }
+  button.btn.small { padding: 7px 12px; font-size: 12.5px; }
   button.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
   a.link-btn, button.link-btn {
@@ -278,16 +439,16 @@
   }
   a.link-btn:hover, button.link-btn:hover { border-bottom-color: var(--blue); }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 11px 13px; border-bottom: 1px solid var(--border); }
-  th { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.045em; white-space: nowrap; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.045em; white-space: nowrap; font-weight: 700; }
   tbody tr { transition: background-color .12s ease; }
   tbody tr:hover { background: var(--surface-2); }
   tr:last-child td { border-bottom: none; }
   td.num { font-variant-numeric: tabular-nums; font-weight: 600; }
   .table-wrap { overflow-x: auto; }
 
-  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3.5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
   .badge.paid { background: var(--green-light); color: var(--green); }
   .badge.partial { background: var(--amber-light); color: var(--amber); }
   .badge.unpaid { background: var(--red-light); color: var(--red); }
@@ -296,20 +457,20 @@
   .badge.neutral { background: var(--surface-2); color: var(--muted); }
 
   .empty {
-    text-align: center; padding: 46px 20px; color: var(--muted); font-size: 13px;
+    text-align: center; padding: 48px 20px; color: var(--muted); font-size: 13.5px;
   }
   .empty::before {
     content: "—"; display: block; font-size: 22px; margin-bottom: 8px; opacity: .4;
   }
 
   form.inline-form {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px; align-items: end;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 13px; align-items: end;
   }
-  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
   .field input, .field select, .field textarea {
-    width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    font-size: 13px; font-family: inherit; background: var(--input-bg); color: var(--text);
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 13.5px; font-family: inherit; background: var(--input-bg); color: var(--text);
     transition: border-color .15s ease, box-shadow .15s ease;
   }
   .field input:hover, .field select:hover, .field textarea:hover { border-color: color-mix(in srgb, var(--blue) 40%, var(--border)); }
@@ -330,8 +491,8 @@
     animation: modalIn .22s cubic-bezier(.2,.9,.3,1.2);
   }
   .modal.wide { max-width: 680px; }
-  .modal h3 { margin: 0 0 4px; font-size: 17px; font-weight: 800; }
-  .modal .modal-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
+  .modal h3 { margin: 0 0 5px; font-size: 19px; font-weight: 800; letter-spacing: -0.015em; }
+  .modal .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 17px; }
   .modal .field { margin-bottom: 12px; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
   .modal-close-x {
@@ -342,58 +503,188 @@
   .modal-close-x:hover { background: var(--border); color: var(--text); }
   .modal-inner-relative { position: relative; }
 
-  #authOverlay {
+  /* ---------------- Auth screen (full-bleed hero) ---------------- */
+  .auth-screen {
+    position: fixed; inset: 0; z-index: 300; display: none;
+    background: #05060d;
+  }
+  .auth-screen.open { display: block; }
+  .auth-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 0;
+  }
+  .auth-scrim {
+    position: absolute; inset: 0; z-index: 1;
     background:
-      radial-gradient(900px 500px at 15% 10%, rgba(129,140,248,.35), transparent 55%),
-      radial-gradient(700px 460px at 90% 90%, rgba(16,185,129,.22), transparent 55%),
-      #0a0b18;
+      radial-gradient(1100px 620px at 8% 0%, rgba(30,20,60,.35), transparent 60%),
+      radial-gradient(900px 700px at 100% 100%, rgba(10,10,35,.55), transparent 55%),
+      linear-gradient(115deg, rgba(4,5,12,.90) 0%, rgba(7,8,20,.68) 32%, rgba(8,9,22,.5) 52%, rgba(5,6,14,.82) 100%);
   }
-  #authOverlay .modal { max-width: 400px; }
-  .auth-logo {
-    width: 88px; height: 88px; border-radius: 20px; margin: 0 auto 14px;
-    background: #ffffff;
-    display: flex; align-items: center; justify-content: center;
-    padding: 6px; box-shadow: var(--shadow-lg);
+  .auth-blob {
+    position: absolute; z-index: 1; pointer-events: none;
+    right: -12%; bottom: -18%; width: 46vw; height: 46vw; max-width: 640px; max-height: 640px;
+    border-radius: 38% 62% 55% 45% / 45% 40% 60% 55%;
+    background: linear-gradient(140deg, #ec4899, #8b5cf6 45%, #3b82f6 85%);
+    opacity: .22; filter: blur(2px);
+    transform: rotate(8deg);
   }
-  .auth-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 14px; }
-  .auth-tabs {
-    display: flex; gap: 3px; margin-bottom: 16px; padding: 3px;
-    background: var(--surface-2); border-radius: var(--radius-sm);
+  .auth-viewport {
+    position: relative; z-index: 2; min-height: 100%;
+    max-height: 100vh; overflow-y: auto;
+    display: flex; flex-direction: column;
+    padding: clamp(18px, 3vw, 34px) clamp(20px, 5vw, 64px) clamp(60px, 8vw, 96px);
+    box-sizing: border-box;
   }
-  .auth-tabs .btn.secondary { border: none; background: transparent; box-shadow: none; }
-  .auth-tabs .btn.secondary:hover { background: color-mix(in srgb, var(--card) 70%, transparent); }
-  .auth-tabs .btn.secondary.active { box-shadow: var(--shadow-sm); }
+  .auth-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .auth-brand-logo { height: clamp(38px, 4.5vw, 54px); width: auto; display: block; object-fit: contain; }
+  .auth-nav-links {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; font-weight: 700; letter-spacing: .12em; color: rgba(226,229,245,.65);
+    padding-top: 8px;
+  }
+  .auth-nav-links .dot { color: rgba(226,229,245,.35); font-size: 10px; }
 
-  .theme-toggle {
-    display: inline-flex; gap: 3px; padding: 3px; margin-top: 4px;
-    background: var(--surface-2); border-radius: var(--radius-sm);
+  .auth-main {
+    flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between;
+    gap: clamp(24px, 5vw, 64px); flex-wrap: wrap; padding: clamp(24px, 5vh, 56px) 0;
   }
-  .theme-option {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: none; border: none; padding: 8px 16px;
-    border-radius: 7px; font-size: 13px; font-weight: 700; font-family: inherit;
-    color: var(--muted); cursor: pointer;
-    transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+  .auth-left { flex: 1 1 460px; max-width: 760px; color: #fff; margin-left: clamp(16px, 5vw, 64px); }
+  .auth-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px 8px 13px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: #c7cdf2; margin-bottom: 24px;
   }
-  .theme-option:hover { color: var(--text); background: color-mix(in srgb, var(--card) 70%, transparent); }
-  .theme-option.active { color: var(--text); background: var(--card); box-shadow: var(--shadow-sm); }
-  .theme-option.active .tab-icon { stroke: var(--blue); }
+  .auth-badge svg { color: #a5b4fc; flex: none; }
+  .auth-headline {
+    font-size: clamp(32px, 4.4vw, 54px); font-weight: 800; line-height: 1.08;
+    letter-spacing: -0.02em; color: #fff; margin: 0 0 16px;
+  }
+  .grad-text {
+    background: linear-gradient(90deg, #818cf8, #c084fc 55%, #f0abfc);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .auth-tagline { font-size: clamp(15px, 1.7vw, 19px); font-weight: 700; color: #e7e9f7; margin-bottom: 14px; }
+  .auth-desc { font-size: 14.5px; line-height: 1.65; color: #9aa0c2; max-width: 430px; margin: 0; }
+
+  .auth-right { flex: 0 1 400px; width: 100%; max-width: 400px; margin-right: clamp(24px, 9vw, 130px); }
+  .auth-card {
+    background: rgba(14,15,28,.58); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 26px; padding: 28px 28px 22px;
+    backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
+    box-shadow: 0 30px 70px -18px rgba(0,0,0,.65);
+  }
+  .auth-card .auth-logo {
+    width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 18px 0;
+    background: #ffffff; display: flex; align-items: center; justify-content: center;
+    padding: 5px; box-shadow: 0 12px 26px -10px rgba(0,0,0,.55);
+  }
+  .auth-card .auth-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 13px; }
+  .auth-card h3 {
+    font-size: 25px; font-weight: 800; letter-spacing: -0.02em; color: #fff;
+    margin: 0 0 8px; text-align: left;
+  }
+  .auth-card .modal-sub { text-align: left; color: #a3a8c6; font-size: 13px; line-height: 1.6; margin-bottom: 22px; }
+
+  /* Shown instead of the login form while a saved session is being
+     re-checked on load, so returning visitors never see the form flash
+     before landing on their dashboard. Toggled via [data-boot="checking"]
+     on <html>, set synchronously in <head> before first paint. */
+  .auth-loading {
+    display: none; flex-direction: column; align-items: center; text-align: center;
+    padding: 34px 10px 30px;
+  }
+  .auth-loading .auth-logo { margin: 0 auto 20px; }
+  .auth-spinner {
+    width: 30px; height: 30px; border-radius: 999px;
+    border: 3px solid rgba(255,255,255,.16); border-top-color: #818cf8;
+    animation: authSpin .8s linear infinite; margin-bottom: 14px;
+  }
+  .auth-loading-text { font-size: 13px; font-weight: 600; color: #a3a8c6; }
+  @keyframes authSpin { to { transform: rotate(360deg); } }
+  :root[data-boot="checking"] #authFormContent { display: none; }
+  :root[data-boot="checking"] #authLoadingState { display: flex; }
+
+  .auth-tabs {
+    display: flex; gap: 3px; margin-bottom: 18px; padding: 3px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius-sm);
+  }
+  .auth-tabs .btn.secondary { border: none; background: transparent; box-shadow: none; color: #b8bde0; }
+  .auth-tabs .btn.secondary:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .auth-tabs .btn.secondary.active { background: rgba(255,255,255,.12); box-shadow: var(--shadow-sm); color: #fff; }
+
+  .auth-field { margin-bottom: 15px; }
+  .auth-field label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 600; color: #c3c8e8; margin-bottom: 7px;
+  }
+  .auth-field label svg { color: #9298c4; flex: none; }
+  .auth-field input {
+    width: 100%; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05);
+    color: #fff; font-size: 13.5px; font-family: inherit;
+    transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+  }
+  .auth-field input::placeholder { color: rgba(226,229,245,.38); }
+  .auth-field input:hover { border-color: rgba(255,255,255,.24); }
+  .auth-field input:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.28); background: rgba(255,255,255,.08); }
+  .auth-input-wrap { position: relative; }
+  .auth-input-wrap input { padding-right: 42px; }
+  .auth-eye-btn {
+    position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+    background: none; border: none; padding: 5px; cursor: pointer;
+    color: #9298c4; display: flex; border-radius: 6px;
+  }
+  .auth-eye-btn:hover { color: #fff; }
+
+  .auth-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 4px 0 20px; }
+  .auth-remember { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: #b8bde0; font-weight: 500; cursor: pointer; }
+  .auth-remember input { accent-color: #818cf8; width: 14px; height: 14px; }
+  .auth-forgot { font-size: 12.5px; color: #a5b4fc; font-weight: 600; text-decoration: none; }
+  .auth-forgot:hover { text-decoration: underline; }
+
+  button.auth-submit-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 9px;
+    background: linear-gradient(90deg, #7c6cf0, #6d8bf5 55%, #61b1fd);
+    padding: 13px 16px; font-size: 14.5px; letter-spacing: -0.005em;
+    box-shadow: 0 10px 28px -8px rgba(124,108,240,.55);
+  }
+  button.auth-submit-btn:hover { box-shadow: 0 12px 32px -8px rgba(124,108,240,.7); }
+
+  .auth-error { color: #fca5a5; font-size: 12.5px; margin-top: 12px; min-height: 1px; }
+
+  .auth-card-footer {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1);
+    font-size: 11px; color: #868cae;
+  }
+  .auth-secured { display: inline-flex; align-items: center; gap: 6px; }
+  .auth-secured svg { color: #6ee7b7; }
+
+  @media (max-width: 900px) {
+    .auth-nav-links, .auth-blob { display: none; }
+    .auth-main { padding: 16px 0; }
+    .auth-right { max-width: 100%; margin-right: 0; }
+    .auth-left { margin-left: 0; }
+  }
 
   .balance-edit { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
   .balance-edit .field { flex: 1; min-width: 160px; }
 
-  .month-filter { padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; background: var(--input-bg); color: var(--text); }
+  .month-filter { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13.5px; font-family: inherit; background: var(--input-bg); color: var(--text); }
 
-  .event-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .event-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
   .event-card {
-    border: 1px solid var(--border); border-radius: var(--radius); padding: 17px; background: var(--card);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; background: var(--card);
     cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
     box-shadow: var(--shadow-sm);
   }
   .event-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: color-mix(in srgb, var(--blue) 30%, var(--border)); }
-  .event-card .ev-name { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
-  .event-card .ev-date { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-  .event-card .ev-row { display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; }
+  .event-card .ev-name { font-weight: 800; font-size: 14.5px; margin-bottom: 3px; }
+  .event-card .ev-date { font-size: 12.5px; color: var(--muted); margin-bottom: 11px; }
+  .event-card .ev-row { display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 5px; }
   .progress-track { background: var(--surface-2); border-radius: 999px; height: 6px; overflow: hidden; margin-top: 10px; }
   .progress-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
 
@@ -401,20 +692,20 @@
     background: linear-gradient(135deg, var(--blue-light), transparent 120%), var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 17px 19px;
-    margin-bottom: 18px;
+    padding: 18px 20px;
+    margin-bottom: 19px;
   }
-  .summary-highlight h3 { margin: 0 0 10px; font-size: 14px; font-weight: 800; }
+  .summary-highlight h3 { margin: 0 0 11px; font-size: 14.5px; font-weight: 800; }
 
-  .bill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .bill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; }
   .bill-event-card {
-    border: 1px solid var(--border); border-radius: var(--radius); padding: 17px; background: var(--card);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; background: var(--card);
     cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
     box-shadow: var(--shadow-sm);
   }
   .bill-event-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: color-mix(in srgb, var(--blue) 30%, var(--border)); }
-  .bill-event-card .be-name { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
-  .bill-event-card .be-count { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .bill-event-card .be-name { font-weight: 800; font-size: 14.5px; margin-bottom: 3px; }
+  .bill-event-card .be-count { font-size: 12.5px; color: var(--muted); margin-bottom: 11px; }
   .bill-thumb-strip { display: flex; gap: 6px; }
   .bill-thumb-strip img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
   .bill-thumb-more { width: 52px; height: 52px; border-radius: 8px; background: var(--surface-2); color: var(--muted);
@@ -452,20 +743,23 @@
   }
   .lightbox-close:hover { background: rgba(255,255,255,0.22); }
 
-  footer { text-align: center; color: var(--muted); font-size: 11.5px; padding: 26px 20px 34px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 28px 20px 36px; }
 
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
   @media (max-width: 640px) {
-    header { padding: 12px 14px; }
-    nav { padding: 8px 14px; top: 62px; }
-    main { padding: 16px 14px 40px; }
+    header { padding: 13px 16px; }
+    nav { padding: 8px 16px; top: 80px; }
+    main { padding: 18px 16px 44px; }
   }
 </style>
 </head>
 <body>
+
+<img class="app-bg" src="bg-image.png" alt="" />
+<div class="app-scrim"></div>
 
 <header>
   <div class="brand">
@@ -474,65 +768,149 @@
     </div>
     <div>
       <h1 id="clubNameTitle">Rotaract Club of Madhyapur Finance Tracker</h1>
-      <div class="sub">Cash • Bank • Membership Dues • Events • Monthly Journal</div>
+      <div class="sub">Service &bull; Fellowship &bull; Leadership</div>
     </div>
   </div>
   <div class="header-actions" id="headerActions" style="display:none;">
-    <span id="authUserLabel" style="font-size:12px; color:var(--muted); align-self:center; margin-right:4px;"></span>
-    <button class="btn secondary small" onclick="exportData()">Export Backup</button>
-    <button class="btn secondary small" onclick="logout()">Log Out</button>
+    <button type="button" class="icon-btn" id="notifBell" onclick="goToTab('activity')" aria-label="Recent activity">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+      <span class="dot" id="notifDot" style="display:none;"></span>
+    </button>
+    <div style="position:relative;">
+      <button type="button" class="profile-chip" id="profileChipBtn">
+        <span class="profile-avatar" id="profileAvatar">?</span>
+        <span class="profile-meta">
+          <span class="profile-name" id="profileName">&nbsp;</span>
+          <span class="profile-email" id="profileEmail"></span>
+        </span>
+        <svg class="profile-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="profile-menu" id="profileMenu">
+        <button type="button" class="pm-header" onclick="openAccountPageFromMenu()">
+          <div class="pm-name" id="pmName"></div>
+          <div class="pm-email" id="pmEmail"></div>
+        </button>
+        <button type="button" onclick="exportData()">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+          Export Backup
+        </button>
+        <button type="button" class="danger" onclick="logout()">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log Out
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
 <!-- Auth Screen (shown until signed in) -->
-<div class="overlay open" id="authOverlay" style="z-index:300;">
-  <div class="modal">
-    <div class="auth-logo">
-      <img src="logo.png" alt="Rotaract Club of Madhyapur" />
+<div class="auth-screen open" id="authOverlay">
+  <img class="auth-bg" src="bg-image.png" alt="" />
+  <div class="auth-scrim"></div>
+  <div class="auth-blob" aria-hidden="true"></div>
+
+  <div class="auth-viewport">
+    <div class="auth-topbar">
+      <img class="auth-brand-logo" src="white-logo.png" alt="Rotaract Club of Madhyapur" />
+      <div class="auth-nav-links">
+        <span>SERVICE</span><span class="dot">&bull;</span><span>FELLOWSHIP</span><span class="dot">&bull;</span><span>LEADERSHIP</span>
+      </div>
     </div>
-    <h3 id="authTitle" style="text-align:center;">Sign In</h3>
-    <div class="modal-sub" style="text-align:center;">Sign in to see and add the club's shared records. Everyone on this account sees the same live data.</div>
 
-    <div class="auth-tabs">
-      <button type="button" class="btn secondary small" id="authTabLogin" style="flex:1;">Sign In</button>
-      <button type="button" class="btn secondary small" id="authTabRegister" style="flex:1;">Create Account</button>
+    <div class="auth-main">
+      <div class="auth-left">
+        <div class="auth-badge">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
+          Finance Tracker
+        </div>
+        <h1 class="auth-headline">Rotaract Club of<br><span class="grad-text">Madhyapur</span></h1>
+        <div class="auth-tagline">Transparent Finances. Stronger Club.</div>
+        <p class="auth-desc">Track income, manage expenses, monitor dues and build a sustainable future for our club.</p>
+      </div>
+
+      <div class="auth-right">
+        <div class="auth-card">
+          <div class="auth-loading" id="authLoadingState">
+            <div class="auth-logo">
+              <img src="logo.png" alt="Rotaract Club of Madhyapur" />
+            </div>
+            <div class="auth-spinner"></div>
+            <div class="auth-loading-text">Signing you back in&hellip;</div>
+          </div>
+
+          <div class="auth-form-content" id="authFormContent">
+          <div class="auth-logo">
+            <img src="logo.png" alt="Rotaract Club of Madhyapur" />
+          </div>
+          <h3 id="authTitle">Welcome <span class="grad-text">Back</span></h3>
+          <div class="modal-sub">Sign in to your club account to access the financial records and manage your data.</div>
+
+          <div class="auth-tabs">
+            <button type="button" class="btn secondary small active" id="authTabLogin" style="flex:1;">Sign In</button>
+            <button type="button" class="btn secondary small" id="authTabRegister" style="flex:1;">Create Account</button>
+          </div>
+
+          <form id="loginForm">
+            <div class="field auth-field">
+              <label><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg> Email Address</label>
+              <input type="email" id="loginEmail" placeholder="your@email.com" required />
+            </div>
+            <div class="field auth-field">
+              <label><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.8a4 4 0 018 0v2.7"/></svg> Password</label>
+              <div class="auth-input-wrap">
+                <input type="password" id="loginPassword" placeholder="Enter your password" required />
+                <button type="button" class="auth-eye-btn" id="loginPasswordToggle" aria-label="Show password">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="auth-row">
+              <label class="auth-remember"><input type="checkbox" id="loginRemember" /> Remember me</label>
+              <a href="#" class="auth-forgot" id="authForgotLink">Forgot password?</a>
+            </div>
+            <button type="submit" class="btn auth-submit-btn" id="loginBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+              Sign In
+            </button>
+          </form>
+
+          <form id="registerForm" style="display:none;">
+            <div class="field auth-field"><label>Your Name</label><input type="text" id="regName" placeholder="Full name" required /></div>
+            <div class="field auth-field"><label>Email Address</label><input type="email" id="regEmail" placeholder="your@email.com" required /></div>
+            <div class="field auth-field"><label>Password</label><input type="password" id="regPassword" placeholder="At least 6 characters" required minlength="6" /></div>
+            <div class="field auth-field"><label>Invite Code</label><input type="text" id="regInviteCode" placeholder="Club invite code" required /></div>
+            <button type="submit" class="btn auth-submit-btn" id="registerBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+              Create Account
+            </button>
+          </form>
+
+          <div id="authError" class="auth-error"></div>
+
+          <div class="auth-card-footer">
+            <span class="auth-secured"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3.2v5.3c0 4.6-3 8.7-7 9.9-4-1.2-7-5.3-7-9.9V6.2L12 3z"/><polyline points="9 12 11.2 14.2 15.5 9.8"/></svg> Secured &amp; Trusted</span>
+            <span class="auth-footer-meta">Rotaract Club of Madhyapur &bull; RY 2026&ndash;27</span>
+          </div>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <form id="loginForm">
-      <div class="field"><label>Email</label><input type="email" id="loginEmail" required /></div>
-      <div class="field"><label>Password</label><input type="password" id="loginPassword" required /></div>
-      <div class="field"><button type="submit" class="btn" id="loginBtn" style="width:100%;">Sign In</button></div>
-    </form>
-
-    <form id="registerForm" style="display:none;">
-      <div class="field"><label>Your Name</label><input type="text" id="regName" required /></div>
-      <div class="field"><label>Email</label><input type="email" id="regEmail" required /></div>
-      <div class="field"><label>Password</label><input type="password" id="regPassword" required minlength="6" /></div>
-      <div class="field"><label>Invite Code</label><input type="text" id="regInviteCode" required /></div>
-      <div class="field"><button type="submit" class="btn" id="registerBtn" style="width:100%;">Create Account</button></div>
-    </form>
-
-    <div id="authError" style="color:var(--red); font-size:12px; margin-top:8px;"></div>
   </div>
 </div>
 
-<div id="appShell" style="display:none;">
-<nav>
+<div class="app-shell" id="appShell" style="display:none;">
+<nav class="sidebar">
   <button class="tab-btn active" data-tab="overview">
-    <svg class="tab-icon" viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
-    Overview
-  </button>
-  <button class="tab-btn" data-tab="members">
-    <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.6 2.7-6.5 6-6.5s6 2.9 6 6.5"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15.8 13.8c2.2.6 3.9 2.9 4.2 6.2"/></svg>
-    Membership & Dues
+    <svg class="tab-icon" viewBox="0 0 24 24"><path d="M4 11.5L12 4l8 7.5"/><path d="M6 10v9.5a1 1 0 0 0 1 1h3.5v-6h3v6H17a1 1 0 0 0 1-1V10"/></svg>
+    Dashboard
   </button>
   <button class="tab-btn" data-tab="transactions">
     <svg class="tab-icon" viewBox="0 0 24 24"><path d="M3 7h14l-3.5-3.5"/><path d="M21 17H7l3.5 3.5"/></svg>
     Transactions
   </button>
-  <button class="tab-btn" data-tab="events">
-    <svg class="tab-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
-    Events
+  <button class="tab-btn" data-tab="members">
+    <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.6 2.7-6.5 6-6.5s6 2.9 6 6.5"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15.8 13.8c2.2.6 3.9 2.9 4.2 6.2"/></svg>
+    Membership & Dues
   </button>
   <button class="tab-btn" data-tab="bills">
     <svg class="tab-icon" viewBox="0 0 24 24"><path d="M6 3h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3V3z"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12.5" x2="15" y2="12.5"/></svg>
@@ -546,6 +924,10 @@
     <svg class="tab-icon" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>
     Liabilities
   </button>
+  <button class="tab-btn" data-tab="events">
+    <svg class="tab-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+    Events
+  </button>
   <button class="tab-btn" data-tab="activity">
     <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14.5"/></svg>
     Recent Activity
@@ -554,33 +936,94 @@
     <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
     Settings
   </button>
+
+  <div class="sidebar-footer">
+    <svg class="silhouette" viewBox="0 0 300 140" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 140 L0 100 L20 100 L20 80 L35 80 L35 60 L45 60 L45 30 L55 30 L55 10 L65 30 L65 60 L75 60 L75 85 L95 85 L95 70 L110 70 L110 95 L140 95 L140 55 L150 40 L160 55 L160 95 L190 95 L190 75 L205 75 L205 100 L230 100 L230 65 L245 65 L245 100 L270 100 L270 110 L300 110 L300 140 Z" fill="#ffffff"/>
+    </svg>
+    <div class="sf-text">Together<br>for a better<br>tomorrow</div>
+  </div>
 </nav>
 
 <main>
 
   <!-- OVERVIEW -->
   <section id="tab-overview" class="tab active">
-    <div class="stat-grid" id="overviewStats"></div>
-
-    <div class="card">
-      <div class="card-header"><h2>Monthly Summary</h2></div>
-      <div class="card-body table-wrap">
-        <table id="monthlyTable">
-          <thead><tr><th>Month</th><th>Income</th><th>Expense</th><th>Net</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <div id="monthlyEmpty" class="empty" style="display:none;">No transactions recorded yet.</div>
+    <div class="ov-greeting-row">
+      <div class="ov-greeting">
+        <div class="ov-greeting-eyebrow" id="ovGreetingEyebrow">Good Morning,</div>
+        <h2 id="ovGreetingName"><span class="grad-text">there</span></h2>
+        <div class="ov-greeting-sub">Here's what's happening with your club's finances today.</div>
+      </div>
+      <div class="ov-date-pill">
+        <span class="icon-wrap">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+        </span>
+        <div>
+          <div class="od-label">Today</div>
+          <div class="od-value" id="ovDateValue">&nbsp;</div>
+        </div>
+        <span class="od-day" id="ovDateDay"></span>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header"><h2>Recent Transactions</h2></div>
-      <div class="card-body table-wrap">
-        <table id="recentTable">
-          <thead><tr><th>Date</th><th>Description</th><th>Account</th><th>Type</th><th>Amount</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <div id="recentEmpty" class="empty" style="display:none;">No transactions yet. Add one from the Transactions tab.</div>
+    <div class="ov-stats" id="overviewStats"></div>
+
+    <div class="ov-grid">
+      <div class="ov-panel">
+        <div class="ov-panel-head">
+          <div>
+            <div class="ov-panel-title">
+              <span class="ov-panel-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></span>
+              Income vs Expense
+            </div>
+            <div class="ov-panel-sub" id="ovDonutSub">All Transactions</div>
+          </div>
+        </div>
+        <div class="ov-donut-wrap" id="ovDonutWrap"></div>
+      </div>
+
+      <div class="ov-panel">
+        <div class="ov-panel-head">
+          <div>
+            <div class="ov-panel-title">
+              <span class="ov-panel-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/></svg></span>
+              Balance Trend
+            </div>
+            <div class="ov-panel-sub">Last 6 Months</div>
+          </div>
+        </div>
+        <div class="ov-linechart" id="ovLineChart"></div>
+      </div>
+
+    </div>
+
+    <div class="ov-tables-grid">
+      <div class="card ov-table-card" id="overviewMonthlyCard">
+        <div class="card-header"><h2>Monthly Summary</h2></div>
+        <div class="card-body table-wrap compact-table scroll-table">
+          <table id="monthlyTable">
+            <thead><tr><th>Month</th><th>Income</th><th>Expense</th><th>Net</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="monthlyEmpty" class="empty" style="display:none;">No transactions recorded yet.</div>
+        </div>
+      </div>
+
+      <div class="card ov-table-card">
+        <div class="card-header">
+          <h2>Recent Transactions</h2>
+          <div class="header-right">
+            <button type="button" class="btn secondary small" onclick="goToTab('transactions')">View All</button>
+          </div>
+        </div>
+        <div class="card-body table-wrap compact-table scroll-table">
+          <table id="recentTable">
+            <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="recentEmpty" class="empty" style="display:none;">No transactions yet. Add one from the Transactions tab.</div>
+        </div>
       </div>
     </div>
   </section>
@@ -743,7 +1186,7 @@
     <div class="card">
       <div class="card-header"><h2>Bills by Event</h2></div>
       <div class="card-body">
-        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+        <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
           Bills are filed under the event they belong to, the same way transactions are. Click an event below to upload or view its bills. Bills not tied to any event land under "General".
         </p>
         <div class="bill-grid" id="billGrid"></div>
@@ -759,14 +1202,14 @@
     <div class="card">
       <div class="card-header"><h2>Upload Monthly Statement</h2></div>
       <div class="card-body">
-        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+        <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
           Download "Statement Report" (.xls) from the eSewa app/merchant portal for the month and upload it here. Rows are matched by reference code, date/time, description and amount, so uploading a file that overlaps a previous upload will not create duplicates.
         </p>
         <form class="inline-form" id="esewaUploadForm">
           <div class="field"><label>eSewa Statement File</label><input type="file" id="esewaFile" accept=".xls,.xlsx" required /></div>
           <div class="field"><button type="submit" class="btn" id="esewaUploadBtn">Upload &amp; Import</button></div>
         </form>
-        <div id="esewaUploadNote" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+        <div id="esewaUploadNote" style="font-size:12.5px; color:var(--muted); margin-top:6px;"></div>
       </div>
     </div>
 
@@ -813,7 +1256,7 @@
     <div class="card">
       <div class="card-header"><h2>Add Liability</h2></div>
       <div class="card-body">
-        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+        <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
           Money the club owes — a vendor bill, a loan, a reimbursement, or an amount owed to a member. Link it to a member so you can weigh it against dues they still owe.
         </p>
         <form class="inline-form" id="liabilityForm">
@@ -832,7 +1275,7 @@
     <div class="card">
       <div class="card-header">
         <h2>Liabilities</h2>
-        <div class="header-right"><span style="font-size:12px; color:var(--muted);">Pending amounts stay on top; fully paid liabilities move to the bottom.</span></div>
+        <div class="header-right"><span style="font-size:12.5px; color:var(--muted);">Pending amounts stay on top; fully paid liabilities move to the bottom.</span></div>
       </div>
       <div class="card-body table-wrap">
         <table id="liabilityTable">
@@ -852,7 +1295,7 @@
       <div class="card-header">
         <h2>Recent Activity</h2>
         <div class="header-right">
-          <span style="font-size:12px; color:var(--muted); max-width:420px;">
+          <span style="font-size:12.5px; color:var(--muted); max-width:420px;">
             Every deletion and edit is logged here permanently for transparency — entries cannot be changed or removed by anyone, including from this app.
           </span>
         </div>
@@ -870,29 +1313,6 @@
   <!-- SETTINGS -->
   <section id="tab-settings" class="tab">
     <div class="card">
-      <div class="card-header"><h2>Appearance</h2></div>
-      <div class="card-body">
-        <p style="color:var(--muted); font-size:13px; margin-top:0;">
-          Choose how the app looks. "System" follows your device's own light/dark setting automatically.
-        </p>
-        <div class="theme-toggle" id="themeToggle" role="group" aria-label="Theme">
-          <button type="button" class="theme-option" id="themeLight" onclick="setTheme('light')">
-            <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 3v2.2M12 18.8V21M4.2 4.2l1.5 1.5M18.3 18.3l1.5 1.5M3 12h2.2M18.8 12H21M4.2 19.8l1.5-1.5M18.3 5.7l1.5-1.5"/></svg>
-            Light
-          </button>
-          <button type="button" class="theme-option" id="themeDark" onclick="setTheme('dark')">
-            <svg class="tab-icon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
-            Dark
-          </button>
-          <button type="button" class="theme-option" id="themeSystem" onclick="setTheme('system')">
-            <svg class="tab-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg>
-            System
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
       <div class="card-header"><h2>Club Name</h2></div>
       <div class="card-body">
         <div class="field" style="max-width:320px;">
@@ -906,7 +1326,7 @@
     <div class="card">
       <div class="card-header"><h2>Opening Balances</h2></div>
       <div class="card-body">
-        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+        <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
           Set this once when you start using the tracker. Balances shown on the Overview tab are this opening amount plus every transaction you record.
         </p>
         <div class="balance-edit">
@@ -921,7 +1341,7 @@
     <div class="card">
       <div class="card-header"><h2>Data</h2></div>
       <div class="card-body">
-        <p style="color:var(--muted); font-size:13px; margin-top:0;">
+        <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
           Data is now stored centrally in the club's shared database — everyone signed in sees the same records live. "Export Backup" downloads a snapshot of everything currently loaded, as a safety copy.
         </p>
         <button class="btn secondary" onclick="exportData()">Export Backup (.json)</button>
@@ -929,7 +1349,105 @@
     </div>
   </section>
 
+  <!-- ACCOUNT (opened from the profile menu in the header, not the sidebar) -->
+  <section id="tab-account" class="tab">
+    <div class="card">
+      <div class="card-header"><h2>My Account</h2></div>
+      <div class="card-body">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+          <span class="profile-avatar" id="acctAvatar" style="width:56px; height:56px; font-size:18px; flex:none;">?</span>
+          <div>
+            <div style="font-size:17px; font-weight:800;" id="acctName">&nbsp;</div>
+            <div style="font-size:13px; color:var(--muted);" id="acctEmail"></div>
+          </div>
+        </div>
+
+        <form id="acctPositionForm" class="inline-form" style="align-items:end;">
+          <div class="field">
+            <label>Position</label>
+            <input type="text" id="acctPosition" placeholder="e.g. Treasurer, Secretary" maxlength="120" />
+          </div>
+          <div class="field">
+            <button type="submit" class="btn" id="acctPositionSaveBtn">Save</button>
+          </div>
+        </form>
+        <div id="acctPositionMsg" style="font-size:12.5px; margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Change Password</h2></div>
+      <div class="card-body">
+        <form id="changePasswordForm">
+          <div class="field" style="max-width:320px;"><label>Current Password</label><input type="password" id="cpCurrent" required /></div>
+          <div class="field" style="max-width:320px;"><label>New Password</label><input type="password" id="cpNew" required minlength="6" /></div>
+          <div class="field" style="max-width:320px;"><label>Confirm New Password</label><input type="password" id="cpConfirm" required minlength="6" /></div>
+          <button type="submit" class="btn" id="cpSubmitBtn">Change Password</button>
+        </form>
+        <div id="changePasswordMsg" style="font-size:12.5px; margin-top:10px;"></div>
+      </div>
+    </div>
+  </section>
+
 </main>
+</div>
+
+<!-- Shared row-actions menu (positioned next to whichever kebab button opened it) -->
+<div class="kebab-menu" id="esewaKebabMenu">
+  <button type="button" id="esewaKebabTransferBtn" onclick="startEsewaTransferFromMenu()">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H9a5 5 0 0 0-5 5v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h12a5 5 0 0 0 5-5v-1"/></svg>
+    Transfer to Transactions
+  </button>
+  <div class="kebab-note" id="esewaKebabTransferredNote">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    Already transferred
+  </div>
+  <button type="button" class="danger" onclick="deleteEsewaTransactionFromMenu()">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    Delete
+  </button>
+</div>
+
+<!-- Transfer eSewa Transaction Modal -->
+<div class="overlay" id="esewaTransferOverlay">
+  <div class="modal">
+    <h3>Transfer to Transactions</h3>
+    <div class="modal-sub">Copy this eSewa entry into the club's shared transaction ledger.</div>
+
+    <div class="field">
+      <label>Type</label>
+      <select id="etfType">
+        <option value="Income">Income</option>
+        <option value="Expense">Expense</option>
+      </select>
+    </div>
+    <div class="field">
+      <label id="etfEntityLabel">Received From</label>
+      <input type="text" id="etfEntityName" placeholder="e.g. Samrat Prajapati" />
+    </div>
+    <div class="field"><label>Description</label><input type="text" id="etfDesc" required /></div>
+    <div class="field"><label>Date</label><input type="date" id="etfDate" required /></div>
+    <div class="field"><label>Amount (Rs)</label><input type="number" id="etfAmount" min="0" required /></div>
+    <div class="field"><label>Category</label><select id="etfCategory"></select></div>
+    <div class="field">
+      <label>Account</label>
+      <select id="etfAccount">
+        <option value="Cash">Cash in Hand</option>
+        <option value="Online" selected>Cash in Online</option>
+        <option value="Bank">Cash in Bank</option>
+      </select>
+    </div>
+    <div class="field"><label>Payment Method</label><select id="etfMethod"></select></div>
+    <div class="field"><label>Event (optional)</label><select id="etfEvent"><option value="none">None</option></select></div>
+    <div class="field"><label>Notes / Reference</label><input type="text" id="etfNotes" placeholder="Optional" /></div>
+
+    <div id="esewaTransferError" style="color:var(--red); font-size:12.5px; margin-top:2px;"></div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeEsewaTransferModal()">Cancel</button>
+      <button class="btn" id="esewaTransferSubmitBtn" onclick="submitEsewaTransfer()">Transfer</button>
+    </div>
+  </div>
 </div>
 
 <!-- Record Payment Modal -->
@@ -965,7 +1483,7 @@
     </div>
     <div class="field"><label>Payment Method</label><select id="lpMethod"></select></div>
     <div class="field"><label>Notes / Reference</label><input type="text" id="lpNotes" placeholder="Optional" /></div>
-    <div id="liabilityPaymentError" style="color:var(--red); font-size:12px;"></div>
+    <div id="liabilityPaymentError" style="color:var(--red); font-size:12.5px;"></div>
     <div class="modal-actions">
       <button class="btn secondary" onclick="closeLiabilityPaymentModal()">Cancel</button>
       <button class="btn" onclick="submitLiabilityPayment()">Record Payment</button>
@@ -1017,10 +1535,10 @@
     <h3 id="edName">Event</h3>
     <div class="modal-sub" id="edDate"></div>
     <div class="stat-grid" id="edStats" style="margin-bottom:16px;"></div>
-    <div id="edNotesWrap" style="margin-bottom:14px; font-size:13px; color:var(--muted);"></div>
+    <div id="edNotesWrap" style="margin-bottom:14px; font-size:13.5px; color:var(--muted);"></div>
 
     <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
-      <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Add Transaction to this Event</div>
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">Add Transaction to this Event</div>
       <form class="inline-form" id="eventTxnForm">
         <div class="field"><label>Date</label><input type="date" id="etDate" required /></div>
         <div class="field"><label>Description</label><input type="text" id="etDesc" required /></div>
@@ -1049,7 +1567,7 @@
     </div>
 
     <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin:16px 0;">
-      <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Add Liability for this Event</div>
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">Add Liability for this Event</div>
       <form class="inline-form" id="eventLiabilityForm">
         <div class="field"><label>Payee / Source</label><input type="text" id="elPayee" placeholder="e.g. Catering Vendor" required /></div>
         <div class="field"><label>Owed to Member (optional)</label><select id="elMember"><option value="none">None</option></select></div>
@@ -1062,7 +1580,7 @@
     </div>
 
     <div class="table-wrap" style="margin-bottom:16px;">
-      <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Liabilities for this Event</div>
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:8px;">Liabilities for this Event</div>
       <table id="edLiabilityTable">
         <thead><tr><th>Date</th><th>Payee / Source</th><th>Member</th><th>Amount</th><th>Paid</th><th>Remaining</th><th>Status</th><th></th></tr></thead>
         <tbody></tbody>
@@ -1086,7 +1604,7 @@
     <div class="modal-sub" id="bdSub"></div>
 
     <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px;">
-      <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Upload a Bill</div>
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">Upload a Bill</div>
       <form class="inline-form" id="billUploadForm">
         <div class="field"><label>Bill Image or PDF</label><input type="file" id="bFile" accept="image/*,application/pdf" required /></div>
         <div class="field"><label>Link to Event</label><select id="bEventSelect"></select></div>
@@ -1094,7 +1612,7 @@
         <div class="field"><label>Description</label><input type="text" id="bDesc" placeholder="e.g. Catering invoice" /></div>
         <div class="field"><button type="submit" class="btn small" id="bUploadBtn">Upload</button></div>
       </form>
-      <div id="billUploadNote" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+      <div id="billUploadNote" style="font-size:12.5px; color:var(--muted); margin-top:6px;"></div>
     </div>
 
     <div class="bill-thumb-grid" id="bdGrid"></div>
@@ -1125,7 +1643,7 @@
     </div>
 
     <div id="csvMappingSection" style="display:none;">
-      <div style="font-size:13px; font-weight:600; margin: 14px 0 10px;">Column Mapping</div>
+      <div style="font-size:13.5px; font-weight:600; margin: 14px 0 10px;">Column Mapping</div>
       <form class="inline-form" id="csvMappingForm" onsubmit="return false;">
         <div class="field"><label>Date column</label><select id="mapDate"></select></div>
         <div class="field"><label>Description column</label><select id="mapDesc"></select></div>
@@ -1151,14 +1669,14 @@
       </div>
 
       <div id="csvPreviewWrap" class="table-wrap" style="margin-top:14px;">
-        <div style="font-size:13px; font-weight:600; margin-bottom:8px;">
+        <div style="font-size:13.5px; font-weight:600; margin-bottom:8px;">
           Preview (<span id="csvPreviewCount">0</span> rows will be imported — <span id="csvPreviewIncome">Rs 0</span> income / <span id="csvPreviewExpense">Rs 0</span> expense)
         </div>
         <table id="csvPreviewTable">
           <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Category</th><th>Account</th><th>Amount</th></tr></thead>
           <tbody></tbody>
         </table>
-        <div id="csvPreviewNote" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+        <div id="csvPreviewNote" style="font-size:12.5px; color:var(--muted); margin-top:6px;"></div>
       </div>
     </div>
 
@@ -1198,35 +1716,6 @@ const CATEGORIES = {
 const PAYMENT_METHODS = ["Cash", "Bank Transfer", "eSewa", "Khalti", "IME Pay", "FonePay", "Cheque", "Other"];
 const ACCOUNT_LABELS = { Cash: "Cash in Hand", Online: "Cash in Online", Bank: "Cash in Bank" };
 function accountLabel(v) { return ACCOUNT_LABELS[v] || v; }
-
-/* ---------------- Appearance (Light / Dark / System) ----------------
-   "system" means no explicit choice: [data-theme] stays off <html> and the
-   CSS just follows prefers-color-scheme, same as before this feature existed. */
-function getThemePref() {
-  try {
-    const t = localStorage.getItem("theme");
-    return t === "light" || t === "dark" ? t : "system";
-  } catch (e) {
-    return "system";
-  }
-}
-function setTheme(mode) {
-  try {
-    if (mode === "light" || mode === "dark") localStorage.setItem("theme", mode);
-    else localStorage.removeItem("theme");
-  } catch (e) {}
-  if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
-  else document.documentElement.removeAttribute("data-theme");
-  syncThemeButtons();
-}
-function syncThemeButtons() {
-  const pref = getThemePref();
-  ["light", "dark", "system"].forEach((mode) => {
-    const btn = document.getElementById("theme" + mode[0].toUpperCase() + mode.slice(1));
-    if (btn) btn.classList.toggle("active", pref === mode);
-  });
-}
-syncThemeButtons();
 
 function defaultState() {
   return {
@@ -1395,6 +1884,7 @@ function normalizeEsewaTransaction(r) {
     description: r.description, type: r.type, amount: Number(r.amount) || 0,
     balance: r.balance !== null && r.balance !== undefined ? Number(r.balance) : null,
     status: r.status || "", channel: r.channel || "", monthKey: r.month_key,
+    linkedTransactionId: r.linked_transaction_id || null,
   };
 }
 function normalizeEsewaUpload(r) {
@@ -1485,17 +1975,30 @@ async function refreshLiabilities() {
 
 /* ---------------- Auth screen ---------------- */
 function showAuthScreen(message) {
+  document.documentElement.removeAttribute("data-boot");
   document.getElementById("authOverlay").classList.add("open");
   document.getElementById("appShell").style.display = "none";
   document.getElementById("headerActions").style.display = "none";
   document.getElementById("authError").textContent = message || "";
 }
+function initials(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+}
 function hideAuthScreen() {
+  document.documentElement.removeAttribute("data-boot");
   document.getElementById("authOverlay").classList.remove("open");
-  document.getElementById("appShell").style.display = "block";
+  document.getElementById("appShell").style.display = "flex";
   document.getElementById("headerActions").style.display = "flex";
   const auth = getAuth();
-  document.getElementById("authUserLabel").textContent = auth && auth.name ? `Signed in as ${auth.name}` : "";
+  const name = (auth && auth.name) || "";
+  const email = (auth && auth.email) || "";
+  document.getElementById("profileAvatar").textContent = initials(name);
+  document.getElementById("profileName").textContent = name;
+  document.getElementById("profileEmail").textContent = email;
+  document.getElementById("pmName").textContent = name;
+  document.getElementById("pmEmail").textContent = email;
 }
 function logout() {
   clearAuth();
@@ -1503,17 +2006,115 @@ function logout() {
   document.getElementById("loginForm").reset();
 }
 
+/* ---------------- Account page (opened from the profile menu) ---------------- */
+function openAccountPageFromMenu() {
+  document.getElementById("profileMenu").classList.remove("open");
+  openAccountPage();
+}
+async function openAccountPage() {
+  document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+  document.getElementById("tab-account").classList.add("active");
+
+  const auth = getAuth();
+  const name = (auth && auth.name) || "";
+  const email = (auth && auth.email) || "";
+  document.getElementById("acctAvatar").textContent = initials(name);
+  document.getElementById("acctName").textContent = name;
+  document.getElementById("acctEmail").textContent = email;
+  document.getElementById("acctPosition").value = "";
+  document.getElementById("acctPositionMsg").textContent = "";
+  document.getElementById("changePasswordForm").reset();
+  document.getElementById("changePasswordMsg").textContent = "";
+
+  try {
+    const me = await api.get("/api/auth/me");
+    document.getElementById("acctPosition").value = me.position || "";
+  } catch (err) {
+    if (err.message !== "Session expired") notifyError(err);
+  }
+}
+
+document.getElementById("acctPositionForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("acctPositionSaveBtn");
+  const msg = document.getElementById("acctPositionMsg");
+  const position = document.getElementById("acctPosition").value.trim();
+
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+  msg.textContent = "";
+  msg.style.color = "";
+  try {
+    await api.put("/api/auth/me", { position });
+    msg.style.color = "var(--green)";
+    msg.textContent = "Saved.";
+  } catch (err) {
+    msg.style.color = "var(--red)";
+    msg.textContent = err.message || "Could not save.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save";
+  }
+});
+
+document.getElementById("changePasswordForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const currentPassword = document.getElementById("cpCurrent").value;
+  const newPassword = document.getElementById("cpNew").value;
+  const confirmPassword = document.getElementById("cpConfirm").value;
+  const msg = document.getElementById("changePasswordMsg");
+  const btn = document.getElementById("cpSubmitBtn");
+
+  msg.textContent = "";
+  msg.style.color = "";
+  if (newPassword.length < 6) {
+    msg.style.color = "var(--red)";
+    msg.textContent = "New password must be at least 6 characters.";
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    msg.style.color = "var(--red)";
+    msg.textContent = "New passwords do not match.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Changing...";
+  try {
+    await api.post("/api/auth/change-password", { currentPassword, newPassword });
+    msg.style.color = "var(--green)";
+    msg.textContent = "Password changed successfully.";
+    document.getElementById("changePasswordForm").reset();
+  } catch (err) {
+    msg.style.color = "var(--red)";
+    msg.textContent = err.message || "Could not change password.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Change Password";
+  }
+});
+
 function switchAuthTab(tab) {
   const isLogin = tab === "login";
   document.getElementById("loginForm").style.display = isLogin ? "block" : "none";
   document.getElementById("registerForm").style.display = isLogin ? "none" : "block";
   document.getElementById("authTabLogin").classList.toggle("active", isLogin);
   document.getElementById("authTabRegister").classList.toggle("active", !isLogin);
-  document.getElementById("authTitle").textContent = isLogin ? "Sign In" : "Create Account";
+  document.getElementById("authTitle").innerHTML = isLogin
+    ? 'Welcome <span class="grad-text">Back</span>'
+    : 'Create <span class="grad-text">Account</span>';
   document.getElementById("authError").textContent = "";
 }
 document.getElementById("authTabLogin").addEventListener("click", () => switchAuthTab("login"));
 document.getElementById("authTabRegister").addEventListener("click", () => switchAuthTab("register"));
+
+document.getElementById("loginPasswordToggle").addEventListener("click", () => {
+  const input = document.getElementById("loginPassword");
+  const showing = input.type === "text";
+  input.type = showing ? "password" : "text";
+  document.getElementById("loginPasswordToggle").setAttribute("aria-label", showing ? "Show password" : "Hide password");
+});
 
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1746,12 +2347,19 @@ function refreshStaticSelects() {
   fillSelect(document.getElementById("payMethod"), PAYMENT_METHODS);
   fillSelect(document.getElementById("etMethod"), PAYMENT_METHODS);
   fillSelect(document.getElementById("lpMethod"), PAYMENT_METHODS);
+  fillSelect(document.getElementById("etfMethod"), PAYMENT_METHODS);
 
   const tEvent = document.getElementById("tEvent");
   const prev = tEvent.value;
   tEvent.innerHTML = `<option value="none">None</option>` +
     state.events.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
   tEvent.value = [...tEvent.options].some((o) => o.value === prev) ? prev : "none";
+
+  const etfEvent = document.getElementById("etfEvent");
+  const prevEtfEvent = etfEvent.value;
+  etfEvent.innerHTML = `<option value="none">None</option>` +
+    state.events.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
+  etfEvent.value = [...etfEvent.options].some((o) => o.value === prevEtfEvent) ? prevEtfEvent : "none";
 
   const bEventSelect = document.getElementById("bEventSelect");
   const prevBillEvent = bEventSelect.value || billDetailGroupKey || "general";
@@ -1782,6 +2390,190 @@ function statCard(label, value, color) {
   return `<div class="stat-card ${color}"><div class="label">${label}</div><div class="value">${value}</div></div>`;
 }
 
+/* ---------------- Dashboard helpers (charts, sparklines, trends) ----------------
+   Hardcoded hex (matching the :root palette) rather than var(--x), since these
+   feed inline SVG attributes and HTML inline styles built as strings — using
+   the same literal values keeps them in sync without relying on the browser
+   resolving custom properties inside dynamically-injected SVG markup. */
+const CHART_COLORS = {
+  blue: "#818cf8", indigo: "#6366f1", purple: "#a78bfa", teal: "#2dd4bf",
+  green: "#34d399", red: "#f87171", amber: "#fbbf24",
+};
+const ICONS = {
+  cash: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9v.01M18 15v.01"/></svg>',
+  online: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="7" cy="14.5" r="1.2"/></svg>',
+  bank: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><rect x="4" y="10" width="16" height="9" rx="1"/><line x1="2" y1="21" x2="22" y2="21"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h12A1.5 1.5 0 0 1 19 6.5V9"/><path d="M3 7.5v10A2.5 2.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-4a1.5 1.5 0 0 0-1.5-1.5h-4a2 2 0 1 0 0 4h5.5"/></svg>',
+  up: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/></svg>',
+  down: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 7 9 13 13 9 21 18"/><polyline points="15 18 21 18 21 12"/></svg>',
+  person: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5"/></svg>',
+  upSm: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 16 10 10 14 14 20 6"/></svg>',
+  downSm: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 8 10 14 14 10 20 18"/></svg>',
+};
+
+function fmtShort(n) {
+  n = Number(n) || 0;
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  if (abs >= 1000) {
+    const v = abs / 1000;
+    return sign + (Number.isInteger(v) ? v : v.toFixed(1)) + "K";
+  }
+  return sign + String(Math.round(abs));
+}
+
+// Direction is purely numeric (curr vs prev). Whether "up" is good or bad
+// depends on the metric — a bigger expense is bad, a bigger balance is good —
+// so callers map direction to color via `goodDirection` in ovStatCard().
+function pctChangeLabel(curr, prev) {
+  curr = Number(curr) || 0;
+  prev = Number(prev) || 0;
+  if (prev === 0) {
+    if (curr === 0) return { text: "No change", dir: "flat" };
+    return { text: "New", dir: curr > 0 ? "up" : "down" };
+  }
+  const rounded = Math.round(((curr - prev) / Math.abs(prev)) * 100);
+  if (rounded === 0) return { text: "0%", dir: "flat" };
+  return { text: (rounded > 0 ? "+" : "") + rounded + "%", dir: rounded > 0 ? "up" : "down" };
+}
+
+// The last `n` calendar months ending this month, as fixed {key,label} slots —
+// unlike monthlyTotals() this always has an entry even for months with zero
+// transactions, so trend charts/sparklines never show gaps.
+function lastNMonthKeys(n) {
+  const out = [];
+  const now = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    out.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("en-US", { month: "short" }) });
+  }
+  return out;
+}
+function accountBalanceAsOfMonthEnd(account, key) {
+  const openingByAccount = { Cash: state.openingCash, Online: state.openingOnline, Bank: state.openingBank };
+  const opening = Number(openingByAccount[account]) || 0;
+  const delta = state.transactions
+    .filter((t) => t.account === account && monthKey(t.date) <= key)
+    .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
+  return opening + delta;
+}
+function totalBalanceAsOfMonthEnd(key) {
+  return accountBalanceAsOfMonthEnd("Cash", key) + accountBalanceAsOfMonthEnd("Online", key) + accountBalanceAsOfMonthEnd("Bank", key);
+}
+
+function sparklineSvg(values, color) {
+  const w = 74, h = 28;
+  if (!values || !values.length) values = [0, 0];
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const step = values.length > 1 ? w / (values.length - 1) : 0;
+  const pts = values.map((v, i) => {
+    const x = i * step;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none"><polyline points="${pts}" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function ovStatCard(opts) {
+  const chg = pctChangeLabel(opts.curr, opts.prev);
+  const arrow = chg.dir === "up" ? "&#8593;" : chg.dir === "down" ? "&#8595;" : "";
+  const goodDirection = opts.goodDirection || "up";
+  const colorCls = chg.dir === "flat" ? "flat" : (chg.dir === goodDirection ? "good" : "bad");
+  return `
+    <div class="ov-card">
+      <div class="ov-card-top">
+        <div class="ov-card-icon" style="background:linear-gradient(135deg, ${opts.colorHex}, ${opts.colorHex}bb)">${opts.iconSvg}</div>
+      </div>
+      <div class="ov-card-label">${opts.label}</div>
+      <div class="ov-card-value">${fmt(opts.value)}</div>
+      <div class="ov-card-foot">
+        <span>
+          <span class="ov-card-change ${colorCls}">${arrow} ${chg.text}</span>
+          <div class="ov-card-change-note">vs last month</div>
+        </span>
+        <span class="ov-card-spark">${sparklineSvg(opts.sparkValues, opts.colorHex)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function buildIncomeExpenseDonut(income, expense) {
+  const total = income + expense;
+  const incomePct = total > 0 ? (income / total) * 100 : 0;
+  const centerPct = Math.round(incomePct);
+  const net = income - expense;
+  const gradient = total > 0
+    ? `conic-gradient(${CHART_COLORS.green} 0% ${incomePct}%, ${CHART_COLORS.red} ${incomePct}% 100%)`
+    : `conic-gradient(var(--border) 0% 100%)`;
+  return `
+    <div class="ov-donut" style="background:${gradient}">
+      <div class="ov-donut-hole">
+        <div class="dh-pct">${centerPct}%</div>
+        <div class="dh-label">Net Balance</div>
+        <div class="dh-net" style="color:${net >= 0 ? "var(--green)" : "var(--red)"}">${net >= 0 ? "+" : "&minus;"} ${fmt(Math.abs(net))}</div>
+      </div>
+    </div>
+    <div class="ov-legend">
+      <div class="ov-legend-row">
+        <span class="ov-legend-dot" style="background:${CHART_COLORS.green}"></span>
+        <div><div class="ov-legend-value">${fmt(income)}</div><div class="ov-legend-label">Total Income</div></div>
+      </div>
+      <div class="ov-legend-row">
+        <span class="ov-legend-dot" style="background:${CHART_COLORS.red}"></span>
+        <div><div class="ov-legend-value">${fmt(expense)}</div><div class="ov-legend-label">Total Expense</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function buildBalanceTrendChart(months, values) {
+  const w = 560, h = 210, padL = 46, padR = 10, padT = 10, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const maxVal = Math.max(...values, 0);
+  const minVal = Math.min(...values, 0);
+  const flat = maxVal === minVal;
+  const range = (maxVal - minVal) || 1;
+  const stepX = values.length > 1 ? plotW / (values.length - 1) : 0;
+  const pts = values.map((v, i) => ({
+    x: padL + i * stepX,
+    y: padT + plotH - ((v - minVal) / range) * plotH,
+  }));
+
+  const linePoints = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const areaPoints = `${padL.toFixed(1)},${(padT + plotH).toFixed(1)} ${linePoints} ${(padL + plotW).toFixed(1)},${(padT + plotH).toFixed(1)}`;
+
+  let gridLines = "";
+  const gridCount = 4;
+  for (let i = 0; i < gridCount; i++) {
+    const frac = i / (gridCount - 1);
+    const y = padT + plotH - frac * plotH;
+    const val = flat ? minVal : minVal + frac * range;
+    gridLines += `<line class="lc-grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + plotW}" y2="${y.toFixed(1)}" />`;
+    if (!flat || i === 0) {
+      gridLines += `<text class="lc-axis-label" x="${(padL - 8).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmtShort(val)}</text>`;
+    }
+  }
+  const monthLabels = pts.map((p, i) => `<text class="lc-month-label" x="${p.x.toFixed(1)}" y="${h - 6}" text-anchor="middle">${months[i].label}</text>`).join("");
+  const dots = pts.map((p) => `<circle class="lc-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" />`).join("");
+
+  return `
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="lcFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${CHART_COLORS.blue}" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="${CHART_COLORS.blue}" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      ${gridLines}
+      <polygon points="${areaPoints}" fill="url(#lcFill)" stroke="none" />
+      <polyline points="${linePoints}" fill="none" stroke="${CHART_COLORS.blue}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      ${dots}
+      ${monthLabels}
+    </svg>
+  `;
+}
+
 function renderOverview() {
   const cash = accountTotal("Cash");
   const online = accountTotal("Online");
@@ -1789,23 +2581,44 @@ function renderOverview() {
   const total = cash + online + bank;
   const months = monthlyTotals();
   const thisMonth = months.find((m) => m.key === currentMonthKey()) || { income: 0, expense: 0 };
-  const duesRemaining = totalDuesExpected() - totalDuesPaid();
-  const liabilitiesRemaining = totalLiabilitiesRemaining();
+  const totalIncomeAll = state.transactions.filter((t) => t.type === "Income").reduce((s, t) => s + t.amount, 0);
+  const totalExpenseAll = state.transactions.filter((t) => t.type === "Expense").reduce((s, t) => s + t.amount, 0);
 
-  document.getElementById("overviewStats").innerHTML = `
-    ${statCard("Cash in Hand", fmt(cash), "green")}
-    ${statCard("Cash in Online", fmt(online), "green")}
-    ${statCard("Cash in Bank", fmt(bank), "blue")}
-    ${statCard("Total Balance", fmt(total), "blue")}
-    ${statCard("This Month Income", fmt(thisMonth.income), "green")}
-    ${statCard("This Month Expense", fmt(thisMonth.expense), "red")}
-    ${statCard("This Month Net", fmt(thisMonth.income - thisMonth.expense), (thisMonth.income - thisMonth.expense) >= 0 ? "green" : "red")}
-    ${statCard("Outstanding Dues", fmt(duesRemaining), "amber")}
-    ${statCard("Pending Liabilities", fmt(liabilitiesRemaining), "red")}
-  `;
+  const auth = getAuth();
+  const firstName = ((auth && auth.name) || "").trim().split(/\s+/)[0] || "there";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good Morning," : hour < 17 ? "Good Afternoon," : "Good Evening,";
+  document.getElementById("ovGreetingEyebrow").textContent = greeting;
+  document.getElementById("ovGreetingName").innerHTML = `<span class="grad-text">${escapeHtml(firstName)}</span>`;
+  const today = new Date();
+  document.getElementById("ovDateValue").textContent = today.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  document.getElementById("ovDateDay").textContent = today.toLocaleDateString("en-US", { weekday: "short" });
+
+  const last6 = lastNMonthKeys(6);
+  const cashSeries = last6.map((m) => accountBalanceAsOfMonthEnd("Cash", m.key));
+  const onlineSeries = last6.map((m) => accountBalanceAsOfMonthEnd("Online", m.key));
+  const bankSeries = last6.map((m) => accountBalanceAsOfMonthEnd("Bank", m.key));
+  const totalSeries = last6.map((m) => totalBalanceAsOfMonthEnd(m.key));
+  const incomeSeries = last6.map((m) => (months.find((x) => x.key === m.key) || { income: 0 }).income);
+  const expenseSeries = last6.map((m) => (months.find((x) => x.key === m.key) || { expense: 0 }).expense);
+  const prevIdx = last6.length - 2, lastIdx = last6.length - 1;
+
+  document.getElementById("overviewStats").innerHTML = [
+    ovStatCard({ label: "Cash in Hand", value: cash, colorHex: CHART_COLORS.teal, iconSvg: ICONS.cash, curr: cashSeries[lastIdx], prev: cashSeries[prevIdx], sparkValues: cashSeries }),
+    ovStatCard({ label: "Cash in Online", value: online, colorHex: CHART_COLORS.blue, iconSvg: ICONS.online, curr: onlineSeries[lastIdx], prev: onlineSeries[prevIdx], sparkValues: onlineSeries }),
+    ovStatCard({ label: "Cash in Bank", value: bank, colorHex: CHART_COLORS.purple, iconSvg: ICONS.bank, curr: bankSeries[lastIdx], prev: bankSeries[prevIdx], sparkValues: bankSeries }),
+    ovStatCard({ label: "Total Balance", value: total, colorHex: CHART_COLORS.indigo, iconSvg: ICONS.wallet, curr: totalSeries[lastIdx], prev: totalSeries[prevIdx], sparkValues: totalSeries }),
+    ovStatCard({ label: "This Month Income", value: thisMonth.income, colorHex: CHART_COLORS.green, iconSvg: ICONS.up, curr: incomeSeries[lastIdx], prev: incomeSeries[prevIdx], sparkValues: incomeSeries }),
+    ovStatCard({ label: "This Month Expense", value: thisMonth.expense, colorHex: CHART_COLORS.red, iconSvg: ICONS.down, curr: expenseSeries[lastIdx], prev: expenseSeries[prevIdx], sparkValues: expenseSeries, goodDirection: "down" }),
+  ].join("");
+
+  document.getElementById("ovDonutWrap").innerHTML = buildIncomeExpenseDonut(totalIncomeAll, totalExpenseAll);
+  const txnCount = state.transactions.length;
+  document.getElementById("ovDonutSub").textContent = `All Transactions (${txnCount})`;
+  document.getElementById("ovLineChart").innerHTML = buildBalanceTrendChart(last6, totalSeries);
 
   const tbody = document.querySelector("#monthlyTable tbody");
-  tbody.innerHTML = months.map((m) => `
+  tbody.innerHTML = months.slice(0, 12).map((m) => `
     <tr>
       <td>${m.label}</td>
       <td class="num" style="color:var(--green)">${fmt(m.income)}</td>
@@ -1815,17 +2628,24 @@ function renderOverview() {
   `).join("");
   document.getElementById("monthlyEmpty").style.display = months.length ? "none" : "block";
 
-  const recent = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 8);
+  const recent = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 12);
   const rtbody = document.querySelector("#recentTable tbody");
-  rtbody.innerHTML = recent.map((t) => `
+  rtbody.innerHTML = recent.map((t) => {
+    const member = t.memberId ? memberById(t.memberId) : null;
+    const rowIcon = member ? ICONS.person : (t.type === "Income" ? ICONS.upSm : ICONS.downSm);
+    return `
     <tr>
-      <td>${t.date}</td>
-      <td>${escapeHtml(t.description)}</td>
-      <td>${accountLabel(t.account)}</td>
-      <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td style="white-space:nowrap;">${t.date}</td>
+      <td style="max-width:0;">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+          <span class="rt-icon" style="background:${t.type === "Income" ? CHART_COLORS.green : CHART_COLORS.red}">${rowIcon}</span>
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.description)}</span>
+        </div>
+      </td>
       <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
   document.getElementById("recentEmpty").style.display = recent.length ? "none" : "block";
 }
 
@@ -1981,7 +2801,7 @@ function billThumbSmall(b) {
   return `<div class="bill-thumb-more">PDF</div>`;
 }
 function billThumbStripHtml(bills) {
-  if (!bills.length) return `<div style="font-size:12px; color:var(--muted);">No bills yet — click to add.</div>`;
+  if (!bills.length) return `<div style="font-size:12.5px; color:var(--muted);">No bills yet — click to add.</div>`;
   const shown = bills.slice(0, 4);
   const extra = bills.length - shown.length;
   return `<div class="bill-thumb-strip">${shown.map(billThumbSmall).join("")}${extra > 0 ? `<div class="bill-thumb-more">+${extra}</div>` : ""}</div>`;
@@ -2077,15 +2897,24 @@ function renderEsewa() {
     <tr>
       <td>${t.date}</td>
       <td>${t.time || "-"}</td>
-      <td>${escapeHtml(t.description)}</td>
+      <td>
+        ${escapeHtml(t.description)}
+        ${t.linkedTransactionId ? `<span class="badge paid" style="margin-left:7px;" title="Already copied into Transactions">Transferred</span>` : ""}
+      </td>
       <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
       <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
       <td class="num">${t.balance !== null ? fmt(t.balance) : "-"}</td>
       <td>${escapeHtml(t.channel || "-")}</td>
       <td>${escapeHtml(t.referenceCode || "-")}</td>
-      <td><button class="btn secondary small" onclick="deleteEsewaTransaction('${t.id}')">Delete</button></td>
+      <td>
+        <button type="button" class="kebab-btn" onclick="toggleEsewaKebab(event, '${t.id}')" aria-label="Row actions">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>
+        </button>
+      </td>
     </tr>
   `).join("");
+  document.getElementById("esewaKebabMenu").classList.remove("open");
+  esewaKebabTargetId = null;
   document.getElementById("esewaEmpty").style.display = rows.length ? "none" : "block";
 
   const uploadsSorted = [...state.esewaUploads].sort((a, b) => new Date(b.at) - new Date(a.at));
@@ -2094,7 +2923,7 @@ function renderEsewa() {
     <tr>
       <td>${new Date(u.at).toLocaleString()}</td>
       <td>${escapeHtml(u.fileName)}</td>
-      <td style="font-size:12px; color:var(--muted);">${escapeHtml(u.fromDateRaw)}${u.toDateRaw ? " → " + escapeHtml(u.toDateRaw) : ""}</td>
+      <td style="font-size:12.5px; color:var(--muted);">${escapeHtml(u.fromDateRaw)}${u.toDateRaw ? " → " + escapeHtml(u.toDateRaw) : ""}</td>
       <td class="num">${u.parsedCount}</td>
       <td class="num" style="color:var(--green)">${u.insertedCount}</td>
       <td class="num" style="color:var(--muted)">${u.duplicateCount}</td>
@@ -2269,6 +3098,11 @@ function renderActivity() {
     </tr>
   `).join("");
   document.getElementById("activityEmpty").style.display = rows.length ? "none" : "block";
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const hasRecent = state.activity.some((a) => Date.now() - new Date(a.at).getTime() < dayMs);
+  const notifDot = document.getElementById("notifDot");
+  if (notifDot) notifDot.style.display = hasRecent ? "block" : "none";
 }
 
 function openBillDetail(key) {
@@ -2476,6 +3310,155 @@ async function deleteEsewaUpload(id) {
   }
 }
 
+/* ---------------- eSewa row-actions menu + "Transfer to Transactions" ----------------
+   The kebab menu is a single shared element (not one per row) that gets
+   repositioned next to whichever button opened it — keeps it from being
+   clipped by the table's scroll container, which a per-row absolutely
+   positioned dropdown would be. */
+let esewaKebabTargetId = null;
+let esewaTransferTargetId = null;
+
+function toggleEsewaKebab(evt, id) {
+  evt.stopPropagation();
+  const menu = document.getElementById("esewaKebabMenu");
+  if (esewaKebabTargetId === id && menu.classList.contains("open")) {
+    menu.classList.remove("open");
+    esewaKebabTargetId = null;
+    return;
+  }
+  esewaKebabTargetId = id;
+
+  const t = state.esewaTransactions.find((x) => x.id === id);
+  const alreadyTransferred = !!(t && t.linkedTransactionId);
+  document.getElementById("esewaKebabTransferBtn").style.display = alreadyTransferred ? "none" : "flex";
+  document.getElementById("esewaKebabTransferredNote").style.display = alreadyTransferred ? "flex" : "none";
+
+  const btnRect = evt.currentTarget.getBoundingClientRect();
+  const menuWidth = 208;
+  const left = Math.max(8, Math.min(btnRect.right - menuWidth, window.innerWidth - menuWidth - 8));
+  menu.style.left = `${left}px`;
+
+  // Render off-screen first so we can measure its real height, then flip it
+  // above the button instead of below when there isn't room to the bottom
+  // of the viewport (the menu is position:fixed, so it can't just be
+  // scrolled into view like an in-flow element).
+  menu.style.top = "-9999px";
+  menu.classList.add("open");
+  const menuHeight = menu.getBoundingClientRect().height;
+  const top = btnRect.bottom + menuHeight + 6 > window.innerHeight
+    ? Math.max(8, btnRect.top - menuHeight - 6)
+    : btnRect.bottom + 6;
+  menu.style.top = `${top}px`;
+}
+document.addEventListener("click", (evt) => {
+  const menu = document.getElementById("esewaKebabMenu");
+  if (menu.classList.contains("open") && !menu.contains(evt.target)) {
+    menu.classList.remove("open");
+    esewaKebabTargetId = null;
+  }
+});
+
+function startEsewaTransferFromMenu() {
+  const id = esewaKebabTargetId;
+  document.getElementById("esewaKebabMenu").classList.remove("open");
+  if (id) openEsewaTransferModal(id);
+}
+function deleteEsewaTransactionFromMenu() {
+  const id = esewaKebabTargetId;
+  document.getElementById("esewaKebabMenu").classList.remove("open");
+  if (id) deleteEsewaTransaction(id);
+}
+
+function updateEsewaTransferEntityLabel() {
+  const isIncome = document.getElementById("etfType").value === "Income";
+  document.getElementById("etfEntityLabel").textContent = isIncome ? "Received From" : "Paid To";
+  document.getElementById("etfEntityName").placeholder = isIncome ? "e.g. Samrat Prajapati" : "e.g. ABC Suppliers";
+}
+function applyEsewaTransferEntityToDescription() {
+  const isIncome = document.getElementById("etfType").value === "Income";
+  const name = document.getElementById("etfEntityName").value.trim();
+  if (!name) return;
+  document.getElementById("etfDesc").value = (isIncome ? "Received from " : "Paid to ") + name;
+}
+function refreshEsewaTransferCategoryOptions() {
+  fillSelect(document.getElementById("etfCategory"), CATEGORIES[document.getElementById("etfType").value]);
+}
+document.getElementById("etfType").addEventListener("change", () => {
+  updateEsewaTransferEntityLabel();
+  refreshEsewaTransferCategoryOptions();
+  applyEsewaTransferEntityToDescription();
+});
+document.getElementById("etfEntityName").addEventListener("input", applyEsewaTransferEntityToDescription);
+
+function openEsewaTransferModal(id) {
+  const t = state.esewaTransactions.find((x) => x.id === id);
+  if (!t) return;
+  if (t.linkedTransactionId) {
+    notifyError(new Error("This eSewa entry has already been transferred."));
+    return;
+  }
+  esewaTransferTargetId = id;
+
+  document.getElementById("etfType").value = t.type;
+  updateEsewaTransferEntityLabel();
+  document.getElementById("etfEntityName").value = "";
+  document.getElementById("etfDesc").value = t.description;
+  document.getElementById("etfDate").value = t.date;
+  document.getElementById("etfAmount").value = t.amount;
+  document.getElementById("etfAccount").value = "Online";
+  refreshEsewaTransferCategoryOptions();
+  document.getElementById("etfNotes").value =
+    `Transferred from eSewa${t.referenceCode ? " • Ref: " + t.referenceCode : ""} • Original: ${t.description}`;
+  document.getElementById("etfEvent").value = "none";
+  document.getElementById("esewaTransferError").textContent = "";
+  document.getElementById("esewaTransferOverlay").classList.add("open");
+}
+function closeEsewaTransferModal() {
+  document.getElementById("esewaTransferOverlay").classList.remove("open");
+  esewaTransferTargetId = null;
+}
+
+async function submitEsewaTransfer() {
+  const id = esewaTransferTargetId;
+  if (!id) return;
+  const date = document.getElementById("etfDate").value;
+  const description = document.getElementById("etfDesc").value.trim();
+  const type = document.getElementById("etfType").value;
+  const category = document.getElementById("etfCategory").value;
+  const account = document.getElementById("etfAccount").value;
+  const amount = Number(document.getElementById("etfAmount").value);
+  const paymentMethod = document.getElementById("etfMethod").value;
+  const eventVal = document.getElementById("etfEvent").value;
+  const notes = document.getElementById("etfNotes").value.trim();
+  const errEl = document.getElementById("esewaTransferError");
+
+  if (!date || !description || !amount) {
+    errEl.textContent = "Date, description and amount are required.";
+    return;
+  }
+
+  const btn = document.getElementById("esewaTransferSubmitBtn");
+  btn.disabled = true;
+  btn.textContent = "Transferring...";
+  errEl.textContent = "";
+  try {
+    const result = await api.post(`/api/esewa/transactions/${id}/transfer`, {
+      date, description, type, category, account, amount,
+      paymentMethod, notes, eventId: eventVal === "none" ? null : eventVal,
+    });
+    state.transactions.push(normalizeTransaction(result.transaction));
+    const idx = state.esewaTransactions.findIndex((x) => x.id === id);
+    if (idx !== -1) state.esewaTransactions[idx] = normalizeEsewaTransaction(result.esewaTransaction);
+    closeEsewaTransferModal();
+    renderAll();
+  } catch (err) {
+    errEl.textContent = err.message || "Transfer failed.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Transfer";
+  }
+}
+
 function viewBillImage(id) {
   const b = state.bills.find((x) => x.id === id);
   if (!b) return;
@@ -2484,7 +3467,7 @@ function viewBillImage(id) {
     content.innerHTML = `
       <div style="background:white; padding:24px; border-radius:10px; text-align:center; max-width:320px;">
         <div style="font-size:32px; margin-bottom:10px;">📄</div>
-        <p style="margin:0 0 14px; font-size:13px; word-break:break-word;">${escapeHtml(b.fileName)}</p>
+        <p style="margin:0 0 14px; font-size:13.5px; word-break:break-word;">${escapeHtml(b.fileName)}</p>
         <a class="btn" href="${b.fileData}" download="${escapeHtml(b.fileName)}">Download PDF</a>
       </div>`;
   } else {
@@ -2504,6 +3487,22 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.classList.add("active");
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
   });
+});
+function goToTab(tabId) {
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+  if (btn) btn.click();
+}
+
+/* ---------------- Header profile menu ---------------- */
+document.getElementById("profileChipBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  document.getElementById("profileMenu").classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("profileMenu");
+  if (menu.classList.contains("open") && !menu.contains(e.target) && e.target.id !== "profileChipBtn") {
+    menu.classList.remove("open");
+  }
 });
 
 /* ---------------- Category dropdown sync ---------------- */

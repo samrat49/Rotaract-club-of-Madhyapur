@@ -94,6 +94,60 @@ router.post("/upload", asyncHandler(async (req, res) => {
   }
 }));
 
+// Copies an eSewa statement row into the real ledger — e.g. "this Rs 2,430
+// eSewa income was really Samrat's membership dues" — as a normal
+// transactions row, then links the eSewa row back to it so it can't be
+// transferred a second time. Runs as one DB transaction (with a row lock on
+// the eSewa row) so a double-click or two concurrent requests can't both
+// succeed and double-count the same money.
+router.post("/transactions/:id/transfer", asyncHandler(async (req, res) => {
+  const { date, description, type, category, account, amount, paymentMethod, notes, eventId } = req.body;
+  if (!date || !description || !type || !category || !account || !amount) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+
+    const esewaRes = await client.query(
+      "select * from esewa_transactions where id = $1 for update",
+      [req.params.id]
+    );
+    const esewaTxn = esewaRes.rows[0];
+    if (!esewaTxn) {
+      await client.query("rollback");
+      return res.status(404).json({ error: "eSewa transaction not found" });
+    }
+    if (esewaTxn.linked_transaction_id) {
+      await client.query("rollback");
+      return res.status(409).json({ error: "This eSewa entry has already been transferred." });
+    }
+
+    const txnRes = await client.query(
+      `insert into transactions
+       (date, description, type, category, account, amount, payment_method, notes, member_id, event_id)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning *`,
+      [date, description, type, category, account, amount, paymentMethod || "", notes || "", null, eventId || null]
+    );
+    const transaction = txnRes.rows[0];
+
+    const linkedRes = await client.query(
+      "update esewa_transactions set linked_transaction_id = $1 where id = $2 returning *",
+      [transaction.id, esewaTxn.id]
+    );
+
+    await client.query("commit");
+    res.json({ transaction, esewaTransaction: linkedRes.rows[0] });
+  } catch (err) {
+    await client.query("rollback");
+    console.error(err);
+    res.status(500).json({ error: "Transfer failed — please try again." });
+  } finally {
+    client.release();
+  }
+}));
+
 router.delete("/transactions/:id", asyncHandler(async (req, res) => {
   const existing = await pool.query("select * from esewa_transactions where id = $1", [req.params.id]);
   const txn = existing.rows[0];

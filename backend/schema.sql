@@ -12,6 +12,11 @@ create table if not exists users (
   created_at timestamptz not null default now()
 );
 
+-- Self-reported club position (e.g. "Treasurer") shown on the account page.
+-- Independent of members.designation, which is the club roster's own field —
+-- this is the login account holder's own title, editable by themselves.
+alter table users add column if not exists position text not null default '';
+
 -- Single-row table holding club-wide settings
 create table if not exists club_settings (
   id int primary key default 1,
@@ -184,6 +189,13 @@ create table if not exists esewa_transactions (
 
 create index if not exists idx_esewa_txn_month on esewa_transactions(month_key);
 create index if not exists idx_esewa_txn_upload on esewa_transactions(upload_id);
+
+-- Lets a raw eSewa statement row be "transferred" into the real ledger —
+-- copied into `transactions` as a normal income/expense entry — while
+-- keeping a link back so the same row can't be transferred twice. Set back
+-- to null if the linked transaction is later deleted, so the eSewa row just
+-- goes back to "not yet transferred" instead of erroring.
+alter table esewa_transactions add column if not exists linked_transaction_id uuid references transactions(id) on delete set null;
 
 -- Migration for databases created before eSewa uploads were a loggable
 -- entity type.
