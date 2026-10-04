@@ -7,6 +7,7 @@ async function requireAdmin(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: "Missing token" });
+  if (!adminSecret()) return res.status(503).json({ error: "Admin is not configured on the server" });
   try {
     const payload = jwt.verify(token, adminSecret());
     if (payload.role !== "admin") throw new Error("not admin");

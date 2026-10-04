@@ -12,15 +12,26 @@ const pool = require("../db");
 
 const DUMMY_HASH = bcrypt.hashSync("not-the-admin-password", 12);
 
-// Admin tokens are signed with a different secret than member tokens, so a
-// member token can never pass as admin (and vice versa).
+// Admin tokens are signed with their own dedicated secret, never derived from
+// the member JWT_SECRET: if that one ever leaks (or is a placeholder copied
+// from an example file) it must not be enough to forge an admin session.
+// Admin login stays disabled until ADMIN_JWT_SECRET is set to a long random
+// value, e.g.  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+const MIN_SECRET_LENGTH = 32;
+
 function adminSecret() {
-  return process.env.ADMIN_JWT_SECRET || `${process.env.JWT_SECRET}:admin`;
+  const s = process.env.ADMIN_JWT_SECRET || "";
+  return s.length >= MIN_SECRET_LENGTH ? s : "";
+}
+
+if (!adminSecret() && (process.env.ADMIN_EMAIL || process.env.ADMIN_PASSWORD_HASH)) {
+  console.warn(`Admin login is DISABLED: set ADMIN_JWT_SECRET to a random value of at least ${MIN_SECRET_LENGTH} characters.`);
 }
 
 // The credentials currently in force, or null if admin login isn't configured.
 // `version` ties tokens to the credentials they were issued for (env = 0).
 async function getCredentials() {
+  if (!adminSecret()) return null; // no safe way to sign admin sessions
   try {
     const r = await pool.query("select email, password_hash, version, updated_at from admin_credentials where id = 1");
     if (r.rows[0]) {
