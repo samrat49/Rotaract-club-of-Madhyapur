@@ -2,6 +2,7 @@ const router = require("express").Router();
 const pool = require("../db");
 const requireAuth = require("../middleware/auth");
 const asyncHandler = require("./asyncHandler");
+const { requirePermission } = require("../lib/permissions");
 
 router.use(requireAuth);
 
@@ -10,17 +11,14 @@ router.get("/", asyncHandler(async (req, res) => {
   res.json(r.rows[0]);
 }));
 
-router.put("/", asyncHandler(async (req, res) => {
-  const { clubName, openingCash, openingOnline, openingBank } = req.body;
+// opening_cash/online/bank are deprecated here — opening balances now live
+// on each tenure row (see routes/tenures.js) and are set once at tenure
+// creation/handover, not edited as a standalone setting.
+router.put("/", requirePermission("settings"), asyncHandler(async (req, res) => {
+  const { clubName } = req.body;
   const r = await pool.query(
-    `update club_settings
-     set club_name = coalesce($1, club_name),
-         opening_cash = coalesce($2, opening_cash),
-         opening_online = coalesce($3, opening_online),
-         opening_bank = coalesce($4, opening_bank)
-     where id = 1
-     returning *`,
-    [clubName, openingCash, openingOnline, openingBank]
+    `update club_settings set club_name = coalesce($1, club_name) where id = 1 returning *`,
+    [clubName]
   );
   res.json(r.rows[0]);
 }));

@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Admin · Rotaract Finance Tracker</title>
+<link rel="icon" type="image/png" href="logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --blue: #818cf8;
+    --blue-dark: #6366f1;
+    --red: #f87171;
+    --red-light: rgba(248, 113, 113, 0.14);
+    --green: #34d399;
+    --green-light: rgba(52, 211, 153, 0.14);
+    --bg: #05060d;
+    --card: #12131f;
+    --input-bg: #171927;
+    --surface-2: #1a1c2c;
+    --border: rgba(255, 255, 255, 0.09);
+    --text: #f4f5fb;
+    --muted: #9297b8;
+    --ring: rgba(129, 140, 248, 0.35);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: var(--font-sans); font-size: 15px; line-height: 1.55;
+    background: var(--bg); color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .hidden { display: none !important; }
+  .glow {
+    position: fixed; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(600px 400px at 15% 10%, rgba(99,102,241,.22), transparent 60%),
+      radial-gradient(500px 400px at 90% 90%, rgba(192,132,252,.16), transparent 60%);
+  }
+  .shell { position: relative; display: flex; min-height: 100vh; }
+  .side {
+    width: 240px; flex: none; padding: 22px 14px; display: flex; flex-direction: column; gap: 6px;
+    background: rgba(18,19,31,.85); border-right: 1px solid var(--border);
+    position: sticky; top: 0; height: 100vh;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 4px 10px 18px; }
+  .brand img { width: 40px; height: 40px; object-fit: contain; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); padding: 4px; }
+  .brand strong { display: block; font-size: 15px; font-weight: 800; }
+  .who { color: var(--muted); font-size: 12px; word-break: break-all; }
+  .nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav a {
+    display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 11px;
+    color: var(--muted); font-weight: 600; font-size: 14px; text-decoration: none;
+  }
+  .nav a svg { width: 18px; height: 18px; flex: none; }
+  .nav a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+  .nav a.active { color: #fff; background: rgba(129,140,248,.18); box-shadow: inset 0 0 0 1px rgba(129,140,248,.35); }
+  .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .main { flex: 1; min-width: 0; max-width: 1040px; padding: 28px 28px 56px; }
+  .page-title { margin: 0 0 4px; font-size: 22px; font-weight: 800; }
+  .page-sub { margin: 0 0 22px; color: var(--muted); font-size: 13.5px; }
+  .btn {
+    font: inherit; font-weight: 600; font-size: 13px; color: var(--text);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 9px 14px; cursor: pointer; text-decoration: none; text-align: center;
+  }
+  .btn:hover { border-color: rgba(255,255,255,.24); }
+  select.search { width: auto; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; text-transform: capitalize; }
+  .tag.create { color: var(--green); background: var(--green-light); }
+  .tag.update { color: #fbbf24; background: rgba(251,191,36,.14); }
+  .tag.delete { color: var(--red); background: var(--red-light); }
+  td.wrap { white-space: normal; min-width: 240px; }
+  .soon { padding: 36px 28px; }
+  .soon h3 { margin: 0 0 8px; font-size: 17px; }
+  .soon p { margin: 0 0 14px; color: var(--muted); max-width: 560px; }
+  .soon ul { margin: 0; padding-left: 18px; color: var(--muted); }
+  .soon li { margin: 4px 0; }
+  .soon .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #a5b4fc; background: rgba(129,140,248,.14); border-radius: 999px; padding: 4px 10px; margin-bottom: 12px; }
+
+  .perm-table th.c, .perm-table td.c { text-align: center; padding-left: 10px; padding-right: 10px; }
+  .perm-table th .ph { display: block; max-width: 110px; margin: 0 auto; white-space: normal; line-height: 1.25; }
+  .perm-table input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--blue-dark); cursor: pointer; }
+  .perm-table input[disabled] { cursor: wait; opacity: .5; }
+  .perm-note { padding: 14px 20px; color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--border); }
+  .perm-note b { color: var(--text); }
+  .form-card { padding: 22px 22px 24px; max-width: 560px; }
+  .form-card h2 { margin: 0 0 4px; font-size: 17px; }
+  .form-card .hint { margin: 0 0 18px; color: var(--muted); font-size: 12.5px; }
+  .fgroup { margin-bottom: 15px; }
+  .fgroup label { display: block; font-size: 12.5px; font-weight: 600; color: #b8bde0; margin-bottom: 6px; }
+  .fgroup input { width: 100%; font: inherit; font-size: 14px; color: var(--text); background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; outline: none; }
+  .fgroup input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }
+  .fgroup .sub { margin-top: 5px; font-size: 12px; color: var(--muted); }
+  .divider { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
+  .primary { font: inherit; font-weight: 700; font-size: 14px; color: #fff; background: linear-gradient(135deg, var(--blue-dark), #8b5cf6); border: 0; border-radius: 10px; padding: 12px 20px; cursor: pointer; }
+  .primary:hover { opacity: .92; }
+  .primary:disabled { opacity: .55; cursor: wait; }
+  .okbox { background: var(--green-light); color: var(--green); border: 1px solid rgba(52,211,153,.3); border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-bottom: 18px; }
+  .kv { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-bottom: 4px; font-size: 13.5px; }
+  .kv span { color: var(--muted); }
+  .exp { display: block; margin-top: 3px; font-size: 11px; font-weight: 600; color: #fbbf24; white-space: nowrap; }
+  .dur { display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
+  .dur select, .dur input { font: inherit; font-size: 12.5px; color: var(--text); background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; outline: none; width: 100%; }
+  .dur select:focus, .dur input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }
+  .dur .custom { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .dur .custom input { width: 72px; }
+  .saved { color: var(--green); font-size: 12px; font-weight: 600; }
+  .failed { color: var(--red); font-size: 12px; font-weight: 600; }
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 22px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .legend div { font-size: 12.5px; color: var(--muted); }
+  .legend b { display: block; color: var(--text); font-size: 13px; }
+
+  @media (max-width: 760px) {
+    .shell { flex-direction: column; }
+    .side { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 12px 14px; border-right: 0; border-bottom: 1px solid var(--border); }
+    .brand { padding: 0 8px 0 0; }
+    .nav { flex-direction: row; order: 3; width: 100%; overflow-x: auto; }
+    .nav a { padding: 9px 12px; white-space: nowrap; }
+    .side-foot { margin: 0 0 0 auto; flex-direction: row; }
+    .main { padding: 20px 14px 40px; }
+  }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+  .stat .label { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+  .stat .value { font-size: 30px; font-weight: 800; margin-top: 2px; }
+  .stat .value.green { color: var(--green); }
+
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+  .panel-head h2 { margin: 0; font-size: 17px; }
+  .panel-head .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .search {
+    font: inherit; font-size: 13.5px; color: var(--text); background: var(--input-bg);
+    border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; width: 240px; max-width: 100%; outline: none;
+  }
+  .search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th, td { text-align: left; padding: 13px 20px; font-size: 13.5px; white-space: nowrap; }
+  th { color: var(--muted); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); }
+  tbody tr + tr td { border-top: 1px solid var(--border); }
+  tbody tr:hover td { background: rgba(255,255,255,.02); }
+  .name { font-weight: 600; }
+  .email { color: var(--muted); font-size: 12.5px; }
+  .pos { color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .pill.on { color: var(--green); background: var(--green-light); }
+  .pill.on i { box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+  .pill.off { color: var(--muted); background: rgba(146,151,184,.12); }
+  .empty, .loading { padding: 36px 20px; text-align: center; color: var(--muted); }
+  .error {
+    background: var(--red-light); color: var(--red); border: 1px solid rgba(248,113,113,.3);
+    border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-bottom: 18px;
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<div id="dashView" class="shell hidden">
+  <aside class="side">
+    <div class="brand">
+      <img src="logo.png" alt="" />
+      <div>
+        <strong>Admin Panel</strong>
+        <div class="who" id="whoAmI"></div>
+      </div>
+    </div>
+    <nav class="nav" aria-label="Admin sections">
+      <a href="#users" data-page="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users</a>
+      <a href="#permissions" data-page="permissions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Permissions</a>
+      <a href="#activity" data-page="activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Activity Log</a>
+      <a href="#settings" data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</a>
+    </nav>
+    <div class="side-foot">
+      <button class="btn" id="refreshBtn" type="button">Refresh</button>
+      <button class="btn" id="logoutBtn" type="button">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="errorBox" class="error hidden" role="alert"></div>
+
+    <!-- USERS -->
+    <section id="page-users" class="page hidden">
+      <h1 class="page-title">Users</h1>
+      <p class="page-sub">Everyone with an account, and who is using the app right now.</p>
+
+      <div class="stats">
+        <div class="stat"><div class="label">Total accounts</div><div class="value" id="statTotal">–</div></div>
+        <div class="stat"><div class="label">Online now</div><div class="value green" id="statOnline">–</div></div>
+        <div class="stat"><div class="label">Offline</div><div class="value" id="statOffline">–</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Accounts</h2>
+            <div class="meta" id="metaLine">Updates automatically every 30 seconds</div>
+          </div>
+          <input class="search" id="search" type="search" placeholder="Search name or email" autocomplete="off" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Account</th><th>Status</th><th>Position</th><th>Last login</th><th>Last active</th><th>Joined</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div id="emptyMsg" class="loading">Loading accounts…</div>
+      </div>
+    </section>
+
+    <!-- PERMISSIONS -->
+    <section id="page-permissions" class="page hidden">
+      <h1 class="page-title">Permissions</h1>
+      <p class="page-sub">Choose what each member can change. Everyone can view the data; ticking a box lets that member make those changes. Changes save instantly and apply right away. Access can be permanent, or limited from 1 hour up to 30 days and then it switches off by itself.</p>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Member access</h2>
+            <div class="meta" id="permMeta">Loading…</div>
+          </div>
+          <input class="search" id="permSearch" type="search" placeholder="Search name or email" autocomplete="off" />
+        </div>
+        <div class="legend" id="permLegend"></div>
+        <div class="table-wrap">
+          <table class="perm-table">
+            <thead id="permHead"></thead>
+            <tbody id="permRows"></tbody>
+          </table>
+        </div>
+        <div id="permEmpty" class="loading">Loading accounts…</div>
+        <div class="perm-note"><b>Timed access:</b> pick a duration in the last column <em>before</em> ticking a box. It applies only to access you newly turn on; access a member already has keeps its current end time. To change one, untick it and tick it again.</div>
+        <div class="perm-note"><b>Settings</b> is hidden from members who don't have it. It controls opening balances, starting and closing tenures, and the club name. Grant it sparingly.</div>
+      </div>
+    </section>
+
+    <!-- ACTIVITY LOG -->
+    <section id="page-activity" class="page hidden">
+      <h1 class="page-title">Activity Log</h1>
+      <p class="page-sub">Every create, edit and delete made by members. This record can't be changed.</p>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Recent activity</h2>
+            <div class="meta" id="activityMeta">Latest 200 entries</div>
+          </div>
+          <div class="filters">
+            <select class="search" id="actionFilter" aria-label="Filter by action">
+              <option value="">All actions</option>
+              <option value="create">Created</option>
+              <option value="update">Edited</option>
+              <option value="delete">Deleted</option>
+            </select>
+            <input class="search" id="activitySearch" type="search" placeholder="Search activity or person" autocomplete="off" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>When</th><th>Action</th><th>Type</th><th>Details</th><th>By</th></tr></thead>
+            <tbody id="activityRows"></tbody>
+          </table>
+        </div>
+        <div id="activityEmpty" class="loading">Loading activity…</div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="page-settings" class="page hidden">
+      <h1 class="page-title">Settings</h1>
+      <p class="page-sub">Change the email and password you use to sign in as admin.</p>
+
+      <div id="settingsOk" class="okbox hidden" role="status"></div>
+      <div id="settingsErr" class="error hidden" role="alert"></div>
+
+      <form class="panel form-card" id="settingsForm" autocomplete="off" novalidate>
+        <h2>Admin sign-in</h2>
+        <div class="kv"><span>Current email:</span> <strong id="curEmail">…</strong></div>
+        <p class="hint" id="srcNote"></p>
+
+        <div class="fgroup">
+          <label for="newEmail">New email <span style="font-weight:400;color:var(--muted)">(leave blank to keep)</span></label>
+          <input id="newEmail" type="email" autocomplete="off" />
+        </div>
+        <div class="fgroup">
+          <label for="newPass">New password <span style="font-weight:400;color:var(--muted)">(leave blank to keep)</span></label>
+          <input id="newPass" type="password" autocomplete="new-password" />
+          <div class="sub">At least 8 characters.</div>
+        </div>
+        <div class="fgroup">
+          <label for="newPass2">Confirm new password</label>
+          <input id="newPass2" type="password" autocomplete="new-password" />
+        </div>
+
+        <hr class="divider" />
+        <div class="fgroup">
+          <label for="curPass">Current password <span style="color:var(--red)">*</span></label>
+          <input id="curPass" type="password" autocomplete="current-password" />
+          <div class="sub">Required to save any change. Other admin sessions are signed out when you change either value; this one stays signed in.</div>
+        </div>
+        <button class="primary" id="settingsSave" type="submit">Save changes</button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  // The admin signs in on the normal login page (/), which stores the admin
+  // token here and redirects. No valid token means back to that page.
+  var KEY = "cft-admin-v1";
+  var API = (function () {
+    var h = window.location.hostname;
+    return (h === "localhost" || h === "127.0.0.1")
+      ? "http://localhost:4000"
+      : "https://rotaract-club-of-madhyapur-3n78.vercel.app";
+  })();
+  var PAGES = ["users", "permissions", "activity", "settings"];
+  var $ = function (id) { return document.getElementById(id); };
+
+  var token = null;
+  var users = [];
+  var entries = [];
+  var catalog = [];
+  var timer = null;
+  var current = "users";
+
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
+  function clear() { try { localStorage.removeItem(KEY); } catch (e) {} }
+  function leave() { window.location.replace("/"); }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function ago(iso) {
+    if (!iso) return "Never";
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return "Just now";
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + " min ago";
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + " hr ago";
+    var d = Math.floor(h / 24);
+    if (d < 30) return d + (d === 1 ? " day ago" : " days ago");
+    return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  }
+  function when(iso) {
+    return new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+  function showError(msg) {
+    var box = $("errorBox");
+    if (!msg) return box.classList.add("hidden");
+    box.textContent = msg;
+    box.classList.remove("hidden");
+  }
+  function netMsg(err) {
+    return err.message === "Failed to fetch" ? "Cannot reach the server. Will retry automatically." : err.message;
+  }
+  function api(path, method, body) {
+    var opts = { method: method || "GET", headers: { Authorization: "Bearer " + token } };
+    if (body !== undefined) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    return fetch(API + path, opts).then(function (res) {
+      if (res.status === 401) { clear(); leave(); throw new Error("Session expired"); }
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) throw new Error(data.error || "Request failed");
+        return data;
+      });
+    });
+  }
+
+  /* ---------- Users ---------- */
+  function renderUsers() {
+    var q = $("search").value.trim().toLowerCase();
+    var list = users.filter(function (u) {
+      return !q || (u.name || "").toLowerCase().indexOf(q) !== -1 || (u.email || "").toLowerCase().indexOf(q) !== -1;
+    });
+    $("rows").innerHTML = list.map(function (u) {
+      return "<tr>" +
+        '<td><div class="name">' + esc(u.name) + '</div><div class="email">' + esc(u.email) + "</div></td>" +
+        "<td>" + (u.online
+          ? '<span class="pill on"><i></i>Online</span>'
+          : '<span class="pill off"><i></i>Offline</span>') + "</td>" +
+        '<td class="pos">' + (esc(u.position) || "–") + "</td>" +
+        "<td>" + ago(u.last_login_at) + "</td>" +
+        "<td>" + ago(u.last_seen_at) + "</td>" +
+        "<td>" + ago(u.created_at) + "</td>" +
+        "</tr>";
+    }).join("");
+    var empty = $("emptyMsg");
+    if (list.length) empty.classList.add("hidden");
+    else { empty.textContent = users.length ? "No accounts match your search." : "No accounts yet."; empty.classList.remove("hidden"); }
+  }
+  function loadUsers() {
+    return api("/api/admin/users").then(function (data) {
+      users = data.users || [];
+      catalog = data.permissionCatalog || catalog;
+      limits = data.grantLimits || limits;
+      $("statTotal").textContent = data.summary.total;
+      $("statOnline").textContent = data.summary.online;
+      $("statOffline").textContent = data.summary.total - data.summary.online;
+      $("metaLine").textContent = "Online = active in the last " + data.summary.onlineWindowMinutes +
+        " minutes · updates every 30 seconds";
+      showError("");
+      renderUsers();
+      renderPermissions();
+    }).catch(function (err) {
+      if (err.message === "Session expired") return;
+      showError(netMsg(err));
+      if (!users.length) { $("emptyMsg").textContent = "Could not load accounts."; $("emptyMsg").classList.remove("hidden"); }
+    });
+  }
+
+  /* ---------- Permissions ---------- */
+  var DURATIONS = [
+    ["perm", "Permanent"],
+    ["60", "1 hour"], ["120", "2 hours"], ["240", "4 hours"], ["480", "8 hours"],
+    ["1440", "24 hours"], ["4320", "3 days"], ["10080", "7 days"], ["20160", "14 days"], ["43200", "30 days"],
+    ["custom", "Custom…"]
+  ];
+  var durChoice = {}; // per member id: { sel, hours } — survives re-renders while searching
+  var limits = { minMinutes: 60, maxMinutes: 43200 };
+
+  function left(iso) {
+    var ms = Date.parse(iso) - Date.now();
+    if (!(ms > 0)) return "";
+    var m = Math.ceil(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    if (d >= 2) return d + "d " + (h % 24) + "h left";
+    if (h >= 1) return h + "h " + (m % 60) + "m left";
+    return m + "m left";
+  }
+  function expSpan(u, key) {
+    var at = (u.permissionExpires || {})[key];
+    var txt = at ? left(at) : "";
+    return '<span class="exp" data-exp="' + esc(at || "") + '">' + (txt ? "⏱ " + esc(txt) : "") + "</span>";
+  }
+  function durationCell(u) {
+    var c = durChoice[u.id] || { sel: "perm", hours: "" };
+    return '<td><div class="dur"><select class="dur-sel" aria-label="Access duration for ' + esc(u.name) + '">' +
+      DURATIONS.map(function (d) { return '<option value="' + d[0] + '"' + (c.sel === d[0] ? " selected" : "") + ">" + d[1] + "</option>"; }).join("") +
+      '</select><label class="custom' + (c.sel === "custom" ? "" : " hidden") + '">Hours <input class="dur-hours" type="number" min="' +
+      (limits.minMinutes / 60) + '" max="' + (limits.maxMinutes / 60) + '" step="1" value="' + esc(c.hours) + '" placeholder="1–' + (limits.maxMinutes / 60) + '" /></label></div></td>';
+  }
+
+  function renderPermissions() {
+    if (!catalog.length) return;
+    $("permLegend").innerHTML = catalog.map(function (p) {
+      return "<div><b>" + esc(p.label) + "</b>" + esc(p.description) + "</div>";
+    }).join("");
+    $("permHead").innerHTML = "<tr><th>Account</th>" + catalog.map(function (p) {
+      return '<th class="c"><span class="ph">' + esc(p.label) + "</span></th>";
+    }).join("") + "<th>New access lasts</th><th></th></tr>";
+
+    var q = $("permSearch").value.trim().toLowerCase();
+    var list = users.filter(function (u) {
+      return !q || (u.name || "").toLowerCase().indexOf(q) !== -1 || (u.email || "").toLowerCase().indexOf(q) !== -1;
+    });
+    $("permRows").innerHTML = list.map(function (u) {
+      var have = u.permissions || [];
+      return '<tr data-id="' + esc(u.id) + '">' +
+        '<td><div class="name">' + esc(u.name) + '</div><div class="email">' + esc(u.email) + "</div></td>" +
+        catalog.map(function (p) {
+          return '<td class="c"><input type="checkbox" data-key="' + esc(p.key) + '" aria-label="' +
+            esc(p.label + " for " + u.name) + '"' + (have.indexOf(p.key) !== -1 ? " checked" : "") + " />" + expSpan(u, p.key) + "</td>";
+        }).join("") +
+        durationCell(u) +
+        '<td class="status"></td></tr>';
+    }).join("");
+    $("permMeta").textContent = users.length + " account" + (users.length === 1 ? "" : "s");
+    var empty = $("permEmpty");
+    if (list.length) empty.classList.add("hidden");
+    else { empty.textContent = users.length ? "No accounts match your search." : "No accounts yet."; empty.classList.remove("hidden"); }
+  }
+
+  // Keeps countdowns live, and unticks a box the moment its time runs out
+  // (the server stops honouring it at exactly that moment too).
+  function tickCountdowns() {
+    if (current !== "permissions") return;
+    Array.prototype.forEach.call(document.querySelectorAll("#permRows .exp"), function (span) {
+      var at = span.getAttribute("data-exp");
+      if (!at) return;
+      var txt = left(at);
+      if (txt) { span.textContent = "⏱ " + txt; return; }
+      span.textContent = "";
+      span.setAttribute("data-exp", "");
+      var cell = span.closest("td"), tr = span.closest("tr");
+      var box = cell && cell.querySelector("input[type=checkbox]");
+      if (box) box.checked = false;
+      var u = users.filter(function (x) { return x.id === tr.getAttribute("data-id"); })[0];
+      if (u && box) {
+        var key = box.getAttribute("data-key");
+        u.permissions = (u.permissions || []).filter(function (k) { return k !== key; });
+        if (u.permissionExpires) delete u.permissionExpires[key];
+      }
+    });
+  }
+
+  // Remember the duration picked for a row, and reveal the custom hours box.
+  $("permRows").addEventListener("change", function (e) {
+    var t = e.target, row = t && t.closest ? t.closest("tr") : null;
+    if (!row) return;
+    var id = row.getAttribute("data-id");
+    if (t.classList.contains("dur-sel")) {
+      durChoice[id] = { sel: t.value, hours: (durChoice[id] || {}).hours || "" };
+      row.querySelector(".custom").classList.toggle("hidden", t.value !== "custom");
+      return;
+    }
+    if (t.classList.contains("dur-hours")) {
+      durChoice[id] = { sel: "custom", hours: t.value };
+      return;
+    }
+    if (t.type === "checkbox") saveRow(t, row, id);
+  });
+
+  // Minutes the admin chose for newly granted access: null = permanent, or an
+  // error string if the custom hours are unusable.
+  function chosenMinutes(row) {
+    var sel = row.querySelector(".dur-sel").value;
+    if (sel === "perm") return { minutes: null };
+    if (sel !== "custom") return { minutes: parseInt(sel, 10) };
+    var h = Number(row.querySelector(".dur-hours").value);
+    var min = limits.minMinutes / 60, max = limits.maxMinutes / 60;
+    if (!Number.isInteger(h) || h < min || h > max) return { error: "Enter whole hours between " + min + " and " + max + "." };
+    return { minutes: h * 60 };
+  }
+
+  // Saves one member's full set whenever a box is ticked/unticked. On failure
+  // the box is put back so the screen never shows access that wasn't saved.
+  function saveRow(box, row, id) {
+    var status = row.querySelector(".status");
+    var boxes = row.querySelectorAll("input[type=checkbox]");
+    var wanted = [];
+    Array.prototype.forEach.call(boxes, function (b) { if (b.checked) wanted.push(b.getAttribute("data-key")); });
+
+    var dur = chosenMinutes(row);
+    if (dur.error && box.checked) { // only matters when something is being granted
+      box.checked = false;
+      status.innerHTML = '<span class="failed">' + esc(dur.error) + "</span>";
+      return;
+    }
+    var body = { permissions: wanted };
+    if (dur.minutes) body.expiresInMinutes = dur.minutes;
+
+    Array.prototype.forEach.call(boxes, function (b) { b.disabled = true; });
+    status.innerHTML = "";
+    fetch(API + "/api/admin/users/" + encodeURIComponent(id) + "/permissions", {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      if (res.status === 401) { clear(); leave(); throw new Error("Session expired"); }
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) throw new Error(data.error || "Could not save");
+        return data;
+      });
+    }).then(function (saved) {
+      var u = users.filter(function (x) { return x.id === id; })[0];
+      if (u) { u.permissions = saved.permissions; u.permissionExpires = saved.permissionExpires || {}; }
+      Array.prototype.forEach.call(boxes, function (b) {
+        var key = b.getAttribute("data-key");
+        b.checked = saved.permissions.indexOf(key) !== -1;
+        var span = b.closest("td").querySelector(".exp");
+        var at = (saved.permissionExpires || {})[key] || "";
+        span.setAttribute("data-exp", at);
+        span.textContent = at && left(at) ? "⏱ " + left(at) : "";
+      });
+      status.innerHTML = '<span class="saved">Saved</span>';
+      setTimeout(function () { if (status.firstChild && status.firstChild.className === "saved") status.innerHTML = ""; }, 1800);
+    }).catch(function (err) {
+      if (err.message === "Session expired") return;
+      box.checked = !box.checked; // undo the change that failed to save
+      status.innerHTML = '<span class="failed">' + esc(netMsg(err)) + "</span>";
+    }).then(function () {
+      Array.prototype.forEach.call(boxes, function (b) { b.disabled = false; });
+    });
+  }
+  $("permSearch").addEventListener("input", renderPermissions);
+
+  /* ---------- Activity ---------- */
+  var ACTION_LABEL = { create: "Created", update: "Edited", delete: "Deleted" };
+  function renderActivity() {
+    var q = $("activitySearch").value.trim().toLowerCase();
+    var list = entries.filter(function (e) {
+      if (!q) return true;
+      return [e.summary, e.performed_by_name, e.performed_by_email, e.entity_type]
+        .join(" ").toLowerCase().indexOf(q) !== -1;
+    });
+    $("activityRows").innerHTML = list.map(function (e) {
+      var who = e.performed_by_name || e.performed_by_email || "Unknown";
+      return "<tr>" +
+        '<td title="' + esc(when(e.created_at)) + '">' + ago(e.created_at) + "</td>" +
+        '<td><span class="tag ' + esc(e.action) + '">' + esc(ACTION_LABEL[e.action] || e.action) + "</span></td>" +
+        '<td style="text-transform:capitalize">' + esc(e.entity_type) + "</td>" +
+        '<td class="wrap">' + esc(e.summary) + "</td>" +
+        '<td><div class="name">' + esc(who) + "</div>" +
+          (e.performed_by_name && e.performed_by_email ? '<div class="email">' + esc(e.performed_by_email) + "</div>" : "") + "</td>" +
+        "</tr>";
+    }).join("");
+    var empty = $("activityEmpty");
+    if (list.length) empty.classList.add("hidden");
+    else { empty.textContent = entries.length ? "No activity matches your search." : "No activity recorded yet."; empty.classList.remove("hidden"); }
+  }
+  function loadActivity() {
+    var action = $("actionFilter").value;
+    return api("/api/admin/activity?limit=200" + (action ? "&action=" + encodeURIComponent(action) : "")).then(function (data) {
+      entries = data.entries || [];
+      $("activityMeta").textContent = "Latest " + entries.length + " entries";
+      showError("");
+      renderActivity();
+    }).catch(function (err) {
+      if (err.message === "Session expired") return;
+      showError(netMsg(err));
+      if (!entries.length) { $("activityEmpty").textContent = "Could not load activity."; $("activityEmpty").classList.remove("hidden"); }
+    });
+  }
+
+  /* ---------- Settings (admin sign-in email / password) ---------- */
+  function setSettingsMsg(kind, msg) {
+    $("settingsOk").classList.add("hidden");
+    $("settingsErr").classList.add("hidden");
+    if (!msg) return;
+    var box = $(kind === "ok" ? "settingsOk" : "settingsErr");
+    box.textContent = msg;
+    box.classList.remove("hidden");
+  }
+  function loadSettings() {
+    return api("/api/admin/settings").then(function (d) {
+      $("curEmail").textContent = d.email;
+      $("newEmail").placeholder = d.email;
+      $("srcNote").textContent = d.source === "database"
+        ? "Saved from this page. Forgot the password? Run npm run admin:reset on the server to go back to the .env credentials."
+        : "Currently set by the server's .env file. Saving here stores your new details in the database, which then take over.";
+      showError("");
+    }).catch(function (err) {
+      if (err.message === "Session expired") return;
+      showError(netMsg(err));
+    });
+  }
+  $("settingsForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    setSettingsMsg("", "");
+    var newEmail = $("newEmail").value.trim();
+    var newPass = $("newPass").value;
+    var cur = $("curPass").value;
+    if (!newEmail && !newPass) return setSettingsMsg("err", "Enter a new email or a new password.");
+    if (newPass && newPass.length < 8) return setSettingsMsg("err", "New password must be at least 8 characters.");
+    if (newPass && newPass !== $("newPass2").value) return setSettingsMsg("err", "The two new passwords don't match.");
+    if (!cur) return setSettingsMsg("err", "Enter your current password to save changes.");
+
+    var body = { currentPassword: cur };
+    if (newEmail) body.newEmail = newEmail;
+    if (newPass) body.newPassword = newPass;
+
+    var btn = $("settingsSave");
+    btn.disabled = true; btn.textContent = "Saving…";
+    api("/api/admin/settings", "PUT", body).then(function (res) {
+      // Other sessions were just signed out, so keep this one alive with the new token.
+      token = res.token;
+      try { localStorage.setItem(KEY, JSON.stringify({ token: res.token, email: res.email })); } catch (err) {}
+      $("whoAmI").textContent = res.email;
+      ["newEmail", "newPass", "newPass2", "curPass"].forEach(function (id) { $(id).value = ""; });
+      var what = res.emailChanged && res.passwordChanged ? "Email and password updated"
+        : res.emailChanged ? "Email updated" : "Password updated";
+      setSettingsMsg("ok", what + ". Use the new details next time you sign in.");
+      return loadSettings();
+    }).catch(function (err) {
+      if (err.message === "Session expired") return;
+      setSettingsMsg("err", netMsg(err));
+    }).then(function () {
+      btn.disabled = false; btn.textContent = "Save changes";
+    });
+  });
+
+  /* ---------- Navigation ---------- */
+  function refresh() {
+    if (current === "users" || current === "permissions") return loadUsers();
+    if (current === "activity") return loadActivity();
+    if (current === "settings") return loadSettings();
+  }
+  function go() {
+    var page = (window.location.hash || "").replace("#", "");
+    current = PAGES.indexOf(page) === -1 ? "users" : page;
+    PAGES.forEach(function (p) { $("page-" + p).classList.toggle("hidden", p !== current); });
+    Array.prototype.forEach.call(document.querySelectorAll(".nav a"), function (a) {
+      a.classList.toggle("active", a.getAttribute("data-page") === current);
+    });
+    showError("");
+    refresh();
+  }
+
+  $("logoutBtn").addEventListener("click", function () { clear(); leave(); });
+  $("refreshBtn").addEventListener("click", refresh);
+  $("search").addEventListener("input", renderUsers);
+  $("activitySearch").addEventListener("input", renderActivity);
+  $("actionFilter").addEventListener("change", loadActivity);
+  window.addEventListener("hashchange", go);
+
+  var saved = load();
+  if (!saved || !saved.token) return leave();
+  token = saved.token;
+
+  api("/api/admin/me").then(function (me) {
+    $("whoAmI").textContent = me.email;
+    $("dashView").classList.remove("hidden");
+    go();
+    // Permissions is left alone by the timer so a refresh can't redraw boxes mid-edit.
+    timer = setInterval(function () { if (current !== "permissions" && current !== "settings") refresh(); }, 30000);
+    setInterval(tickCountdowns, 20000);
+  }).catch(function (err) {
+    if (err.message === "Session expired") return;
+    $("dashView").classList.remove("hidden");
+    showError("Cannot reach the server. Reload to retry.");
+  });
+})();
+</script>
+</body>
+</html>

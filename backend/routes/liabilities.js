@@ -2,7 +2,9 @@ const router = require("express").Router();
 const pool = require("../db");
 const requireAuth = require("../middleware/auth");
 const asyncHandler = require("./asyncHandler");
+const { requirePermission } = require("../lib/permissions");
 const { logActivity } = require("../lib/activityLog");
+const { resolveActiveTenureId } = require("../lib/tenure");
 
 router.use(requireAuth);
 
@@ -16,7 +18,7 @@ router.get("/", asyncHandler(async (req, res) => {
   res.json(r.rows);
 }));
 
-router.post("/", asyncHandler(async (req, res) => {
+router.post("/", requirePermission("transactions"), asyncHandler(async (req, res) => {
   const { payeeName, memberId, eventId, category, amount, date, notes } = req.body;
   if (!payeeName || !amount || amount <= 0 || !date) {
     return res.status(400).json({ error: "Payee/source, amount, and date are required" });
@@ -26,6 +28,14 @@ router.post("/", asyncHandler(async (req, res) => {
      values ($1,$2,$3,$4,$5,$6,$7) returning *`,
     [payeeName, memberId || null, eventId || null, category || "", amount, date, notes || ""]
   );
+  await logActivity({
+    action: "create",
+    entityType: "liability",
+    entityId: r.rows[0].id,
+    summary: `Added liability "${payeeName}" — Rs ${amount}`,
+    after: r.rows[0],
+    user: req.user,
+  });
   res.json(r.rows[0]);
 }));
 
@@ -33,7 +43,7 @@ router.post("/", asyncHandler(async (req, res) => {
 // transaction (tagged back to the liability via liability_id) and updates
 // the liability's paid_amount/status in the same DB transaction, so the two
 // can never drift apart.
-router.post("/:id/pay", asyncHandler(async (req, res) => {
+router.post("/:id/pay", requirePermission("transactions"), asyncHandler(async (req, res) => {
   const { amount, date, account, paymentMethod, notes } = req.body;
   if (!amount || amount <= 0 || !date || !account) {
     return res.status(400).json({ error: "Amount, date, and account are required" });
@@ -56,11 +66,17 @@ router.post("/:id/pay", asyncHandler(async (req, res) => {
       return res.status(400).json({ error: `Payment of Rs ${amount} exceeds the remaining Rs ${remaining} owed` });
     }
 
+    const tenureId = await resolveActiveTenureId(client);
+    if (!tenureId) {
+      await client.query("rollback");
+      return res.status(400).json({ error: "No active tenure — start one in Settings first." });
+    }
+
     const txnRes = await client.query(
       `insert into transactions
-       (date, description, type, category, account, amount, payment_method, notes, member_id, event_id, liability_id)
-       values ($1,$2,'Expense','Liability Payment',$3,$4,$5,$6,$7,$8,$9) returning *`,
-      [date, `Liability payment — ${liability.payee_name}`, account, amount, paymentMethod || "", notes || "", liability.member_id, liability.event_id, liability.id]
+       (date, description, type, category, account, amount, payment_method, notes, member_id, event_id, liability_id, tenure_id)
+       values ($1,$2,'Expense','Liability Payment',$3,$4,$5,$6,$7,$8,$9,$10) returning *`,
+      [date, `Liability payment — ${liability.payee_name}`, account, amount, paymentMethod || "", notes || "", liability.member_id, liability.event_id, liability.id, tenureId]
     );
 
     const newPaid = Number(liability.paid_amount) + Number(amount);
@@ -91,7 +107,7 @@ router.post("/:id/pay", asyncHandler(async (req, res) => {
   }
 }));
 
-router.delete("/:id", asyncHandler(async (req, res) => {
+router.delete("/:id", requirePermission("transactions"), asyncHandler(async (req, res) => {
   const before = await pool.query("select * from liabilities where id = $1", [req.params.id]);
   const liability = before.rows[0];
   if (!liability) return res.status(404).json({ error: "Liability not found" });

@@ -146,11 +146,6 @@ create table if not exists activity_log (
 
 create index if not exists idx_activity_log_created on activity_log(created_at desc);
 
--- Migration for databases created before liabilities were added as a
--- loggable entity type.
-alter table activity_log drop constraint if exists activity_log_entity_type_check;
-alter table activity_log add constraint activity_log_entity_type_check check (entity_type in ('transaction','member','event','bill','liability'));
-
 -- eSewa monthly statement imports — a standalone read-only ledger of what
 -- eSewa's own "Statement Report" export reports each month. Deliberately
 -- kept separate from `transactions` / account balances: this is a copy of
@@ -197,10 +192,64 @@ create index if not exists idx_esewa_txn_upload on esewa_transactions(upload_id)
 -- goes back to "not yet transferred" instead of erroring.
 alter table esewa_transactions add column if not exists linked_transaction_id uuid references transactions(id) on delete set null;
 
--- Migration for databases created before eSewa uploads were a loggable
--- entity type.
+-- Rotary tenures ("2026-27" etc, July 1 – June 30). The source of truth for
+-- account opening/closing balances going forward — club_settings'
+-- opening_cash/online/bank below are deprecated in favor of this, left in
+-- place only as a historical seed value for the very first tenure.
+create table if not exists tenures (
+  id uuid primary key default gen_random_uuid(),
+  label text not null unique,
+  start_date date not null,
+  end_date date not null,
+  status text not null default 'active' check (status in ('active','closed')),
+  opening_cash numeric not null default 0,
+  opening_online numeric not null default 0,
+  opening_bank numeric not null default 0,
+  closing_cash numeric,
+  closing_online numeric,
+  closing_bank numeric,
+  closed_at timestamptz,
+  closed_by uuid references users(id),
+  created_at timestamptz not null default now()
+);
+
+-- At most one tenure can be active at a time — enforced at the DB level so
+-- a bug can't leave two tenures both claiming to be "current".
+create unique index if not exists idx_tenures_single_active on tenures (status) where status = 'active';
+
+-- transactions/events/bills are point-in-time entities scoped to whichever
+-- tenure they happened in. members and liabilities deliberately get no
+-- tenure_id — the roster and unpaid debts persist across tenure boundaries.
+alter table transactions add column if not exists tenure_id uuid references tenures(id);
+alter table events add column if not exists tenure_id uuid references tenures(id);
+alter table bills add column if not exists tenure_id uuid references tenures(id);
+create index if not exists idx_transactions_tenure on transactions(tenure_id);
+create index if not exists idx_events_tenure on events(tenure_id);
+create index if not exists idx_bills_tenure on bills(tenure_id);
+
+-- Per-member, per-tenure dues — replaces the flat members.annual_dues below
+-- (left in place, deprecated, not dropped) so a member's dues status can be
+-- tracked independently each rotary year.
+create table if not exists member_tenure_dues (
+  id uuid primary key default gen_random_uuid(),
+  member_id uuid not null references members(id) on delete cascade,
+  tenure_id uuid not null references tenures(id) on delete cascade,
+  dues_amount numeric not null default 0 check (dues_amount >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (member_id, tenure_id)
+);
+create index if not exists idx_member_tenure_dues_tenure on member_tenure_dues(tenure_id);
+create index if not exists idx_member_tenure_dues_member on member_tenure_dues(member_id);
+
+-- Canonical activity_log constraints, kept up to date in place rather than
+-- as a chain of narrower historical migrations (a narrower intermediate
+-- constraint would fail against rows already using a value it doesn't
+-- include, e.g. re-running this on a DB with existing 'esewa' rows).
 alter table activity_log drop constraint if exists activity_log_entity_type_check;
-alter table activity_log add constraint activity_log_entity_type_check check (entity_type in ('transaction','member','event','bill','liability','esewa'));
+alter table activity_log add constraint activity_log_entity_type_check check (entity_type in ('transaction','member','event','bill','liability','esewa','tenure'));
+alter table activity_log drop constraint if exists activity_log_action_check;
+alter table activity_log add constraint activity_log_action_check check (action in ('delete','update','create'));
 
 create or replace function prevent_activity_log_mutation() returns trigger as $$
 begin
@@ -217,3 +266,32 @@ drop trigger if exists trg_activity_log_no_delete on activity_log;
 create trigger trg_activity_log_no_delete
   before delete on activity_log
   for each row execute function prevent_activity_log_mutation();
+
+-- Login/activity tracking shown on the admin page (see migrations/002_user_activity.sql).
+alter table users add column if not exists last_login_at timestamptz;
+alter table users add column if not exists last_seen_at timestamptz;
+
+-- Per-member permissions (see migrations/003_user_permissions.sql).
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'users' and column_name = 'permissions'
+  ) then
+    alter table users add column permissions text[] not null default '{}';
+    update users set permissions =
+      array['members','transactions','event_transactions','esewa','events','bills'];
+  end if;
+end $$;
+
+-- Time-limited permissions (see migrations/004_permission_expiry.sql).
+alter table users add column if not exists permission_expires jsonb not null default '{}'::jsonb;
+
+-- Admin sign-in credentials (see migrations/005_admin_credentials.sql).
+create table if not exists admin_credentials (
+  id int primary key default 1 check (id = 1),
+  email text not null,
+  password_hash text not null,
+  version int not null default 1,
+  updated_at timestamptz not null default now()
+);

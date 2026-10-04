@@ -27,3 +27,6 @@ backend/*.sql
 # contains real transaction data, never commit these.
 *.xls
 *.xlsx
+
+# Local database backups (contain real member/finance data) — never commit.
+backend/backups/

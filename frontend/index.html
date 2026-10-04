@@ -137,6 +137,20 @@
     background: var(--red); border: 2px solid var(--bg);
   }
 
+  .tenure-switcher {
+    height: 40px; padding: 0 12px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .tenure-switcher:hover { background: var(--card); }
+
+  .closed-tenure-banner {
+    display: none; align-items: center; gap: 8px; padding: 10px 14px; margin: 0 0 16px;
+    border-radius: var(--radius-sm); background: color-mix(in srgb, var(--red) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--red) 35%, var(--border));
+    color: var(--text); font-size: 13px; font-weight: 600;
+  }
+
   .profile-chip {
     display: flex; align-items: center; gap: 10px; background: none; border: none;
     cursor: pointer; padding: 4px 6px 4px 4px; border-radius: 999px; color: var(--text);
@@ -754,9 +768,20 @@
     nav { padding: 8px 16px; top: 80px; }
     main { padding: 18px 16px 44px; }
   }
+
+  /* Permissions: the body's data-lock attribute lists what this member CAN'T do; matching controls are hidden. */
+  body[data-lock~="members"] [data-perm="members"],
+  body[data-lock~="transactions"] [data-perm="transactions"],
+  body[data-lock~="event_transactions"] [data-perm="event_transactions"],
+  body[data-lock~="esewa"] [data-perm="esewa"],
+  body[data-lock~="events"] [data-perm="events"],
+  body[data-lock~="bills"] [data-perm="bills"],
+  body[data-lock~="settings"] [data-perm="settings"] { display: none !important; }
+  body[data-lock~="members"][data-lock~="transactions"] [data-perm="members|transactions"] { display: none !important; }
+  body[data-lock~="transactions"][data-lock~="event_transactions"] [data-perm="transactions|event_transactions"] { display: none !important; }
 </style>
 </head>
-<body>
+<body data-lock="members transactions event_transactions esewa events bills settings">
 
 <img class="app-bg" src="bg-image.png" alt="" />
 <div class="app-scrim"></div>
@@ -772,6 +797,7 @@
     </div>
   </div>
   <div class="header-actions" id="headerActions" style="display:none;">
+    <select id="tenureSwitcher" class="tenure-switcher" style="display:none;" onchange="switchTenure(this.value)" aria-label="Rotary tenure"></select>
     <button type="button" class="icon-btn" id="notifBell" onclick="goToTab('activity')" aria-label="Recent activity">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
       <span class="dot" id="notifDot" style="display:none;"></span>
@@ -932,7 +958,7 @@
     <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14.5"/></svg>
     Recent Activity
   </button>
-  <button class="tab-btn" data-tab="settings">
+  <button class="tab-btn" data-tab="settings" data-perm="settings">
     <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
     Settings
   </button>
@@ -946,6 +972,8 @@
 </nav>
 
 <main>
+
+  <div class="closed-tenure-banner" id="closedTenureBanner"></div>
 
   <!-- OVERVIEW -->
   <section id="tab-overview" class="tab active">
@@ -1032,7 +1060,7 @@
   <section id="tab-members" class="tab">
     <div class="stat-grid" id="memberStats"></div>
 
-    <div class="card">
+    <div class="card" data-perm="members">
       <div class="card-header"><h2>Add Member</h2></div>
       <div class="card-body">
         <form class="inline-form" id="memberForm">
@@ -1086,7 +1114,7 @@
 
   <!-- TRANSACTIONS -->
   <section id="tab-transactions" class="tab">
-    <div class="card">
+    <div class="card" data-perm="transactions|event_transactions">
       <div class="card-header"><h2>Add Transaction</h2></div>
       <div class="card-body">
         <form class="inline-form" id="txnForm">
@@ -1128,7 +1156,7 @@
             <option value="expense">Expenses Only</option>
             <option value="liability">Liabilities Paid Only</option>
           </select>
-          <button class="btn secondary small" onclick="openCsvImportModal()">Import CSV</button>
+          <button class="btn secondary small" data-perm="transactions" onclick="openCsvImportModal()">Import CSV</button>
           <button class="btn secondary small" onclick="exportMonthlyReportCSV()">Export Month (CSV)</button>
           <button class="btn secondary small" onclick="exportAllTransactionsCSV()">Export All (CSV)</button>
         </div>
@@ -1155,7 +1183,7 @@
   <section id="tab-events" class="tab">
     <div class="stat-grid" id="eventStats"></div>
 
-    <div class="card">
+    <div class="card" data-perm="events">
       <div class="card-header"><h2>Create Event</h2></div>
       <div class="card-body">
         <form class="inline-form" id="eventForm">
@@ -1199,7 +1227,7 @@
   <section id="tab-esewa" class="tab">
     <div class="stat-grid" id="esewaTopStats"></div>
 
-    <div class="card">
+    <div class="card" data-perm="esewa">
       <div class="card-header"><h2>Upload Monthly Statement</h2></div>
       <div class="card-body">
         <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
@@ -1253,7 +1281,7 @@
   <section id="tab-liabilities" class="tab">
     <div class="stat-grid" id="liabilityStats"></div>
 
-    <div class="card">
+    <div class="card" data-perm="transactions">
       <div class="card-header"><h2>Add Liability</h2></div>
       <div class="card-body">
         <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
@@ -1311,7 +1339,7 @@
   </section>
 
   <!-- SETTINGS -->
-  <section id="tab-settings" class="tab">
+  <section id="tab-settings" class="tab" data-perm="settings">
     <div class="card">
       <div class="card-header"><h2>Club Name</h2></div>
       <div class="card-body">
@@ -1324,17 +1352,39 @@
     </div>
 
     <div class="card">
-      <div class="card-header"><h2>Opening Balances</h2></div>
+      <div class="card-header"><h2>Rotary Tenure</h2></div>
       <div class="card-body">
-        <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
-          Set this once when you start using the tracker. Balances shown on the Overview tab are this opening amount plus every transaction you record.
-        </p>
-        <div class="balance-edit">
-          <div class="field"><label>Opening Cash in Hand (Rs)</label><input type="number" id="openCash" /></div>
-          <div class="field"><label>Opening Cash in Online (Rs)</label><input type="number" id="openOnline" /></div>
-          <div class="field"><label>Opening Cash in Bank (Rs)</label><input type="number" id="openBank" /></div>
+        <!-- Shown only before the very first tenure has been created. -->
+        <div id="tenureBootstrap" style="display:none;">
+          <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
+            Set up your first rotary tenure (e.g. "2026-27") with its opening balances. Every year after this one is created automatically when you close the current one.
+          </p>
+          <div class="field" style="max-width:200px;"><label>Tenure Label</label><input type="text" id="tenureBootstrapLabel" placeholder="2026-27" /></div>
+          <div class="balance-edit">
+            <div class="field"><label>Start Date</label><input type="date" id="tenureBootstrapStart" /></div>
+            <div class="field"><label>End Date</label><input type="date" id="tenureBootstrapEnd" /></div>
+          </div>
+          <div class="balance-edit">
+            <div class="field"><label>Opening Cash in Hand (Rs)</label><input type="number" id="tenureBootstrapCash" /></div>
+            <div class="field"><label>Opening Cash in Online (Rs)</label><input type="number" id="tenureBootstrapOnline" /></div>
+            <div class="field"><label>Opening Cash in Bank (Rs)</label><input type="number" id="tenureBootstrapBank" /></div>
+          </div>
+          <button class="btn" style="margin-top:12px;" onclick="createFirstTenure()">Start Tenure</button>
         </div>
-        <button class="btn" style="margin-top:12px;" onclick="saveOpeningBalances()">Save Balances</button>
+
+        <!-- Shown once at least one tenure exists. -->
+        <div id="tenureSummary" style="display:none;">
+          <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
+            Balances shown on the Overview tab are the active tenure's opening amount plus every transaction recorded within it. Use the year switcher in the header to view a past tenure.
+          </p>
+          <div class="balance-edit">
+            <div class="field"><label>Active Tenure</label><input type="text" id="tenureSummaryLabel" disabled /></div>
+            <div class="field"><label>Cash in Hand (Rs)</label><input type="text" id="tenureSummaryCash" disabled /></div>
+            <div class="field"><label>Cash in Online (Rs)</label><input type="text" id="tenureSummaryOnline" disabled /></div>
+            <div class="field"><label>Cash in Bank (Rs)</label><input type="text" id="tenureSummaryBank" disabled /></div>
+          </div>
+          <button class="btn secondary" id="tenureCloseBtn" style="margin-top:12px;" onclick="openTenureCloseModal()">Close &amp; Start New Year</button>
+        </div>
       </div>
     </div>
 
@@ -1507,6 +1557,24 @@
   </div>
 </div>
 
+<!-- Close & Start New Year Modal -->
+<div class="overlay" id="tenureCloseOverlay">
+  <div class="modal">
+    <h3>Close &amp; Start New Year</h3>
+    <div class="modal-sub">This locks the current tenure as read-only and starts the next one with these balances carried forward as its opening balances. This can't be undone from the app.</div>
+    <div id="tenureCloseSummary" style="font-size:13.5px; margin:10px 0 16px; line-height:1.6;"></div>
+    <div class="field"><label>Next Tenure Label</label><input type="text" id="tenureCloseNextLabel" /></div>
+    <div class="balance-edit">
+      <div class="field"><label>Start Date</label><input type="date" id="tenureCloseNextStart" /></div>
+      <div class="field"><label>End Date</label><input type="date" id="tenureCloseNextEnd" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeTenureCloseModal()">Cancel</button>
+      <button class="btn" id="tenureCloseConfirmBtn" onclick="confirmTenureClose()">Confirm &amp; Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Member Detail / History Modal -->
 <div class="overlay" id="memberDetailOverlay">
   <div class="modal wide modal-inner-relative">
@@ -1537,7 +1605,7 @@
     <div class="stat-grid" id="edStats" style="margin-bottom:16px;"></div>
     <div id="edNotesWrap" style="margin-bottom:14px; font-size:13.5px; color:var(--muted);"></div>
 
-    <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
+    <div data-perm="event_transactions" style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
       <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">Add Transaction to this Event</div>
       <form class="inline-form" id="eventTxnForm">
         <div class="field"><label>Date</label><input type="date" id="etDate" required /></div>
@@ -1566,7 +1634,7 @@
       <div id="edEmpty" class="empty" style="display:none;">No transactions linked to this event yet.</div>
     </div>
 
-    <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin:16px 0;">
+    <div data-perm="transactions" style="border:1px solid var(--border); border-radius:10px; padding:14px; margin:16px 0;">
       <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">Add Liability for this Event</div>
       <form class="inline-form" id="eventLiabilityForm">
         <div class="field"><label>Payee / Source</label><input type="text" id="elPayee" placeholder="e.g. Catering Vendor" required /></div>
@@ -1590,7 +1658,7 @@
 
     <div class="modal-actions">
       <button class="btn secondary" id="edExportBtn">Export Event Report (CSV)</button>
-      <button class="btn danger" id="edDeleteBtn">Delete Event</button>
+      <button class="btn danger" id="edDeleteBtn" data-perm="events">Delete Event</button>
       <button class="btn secondary" onclick="closeEventDetail()">Close</button>
     </div>
   </div>
@@ -1603,7 +1671,7 @@
     <h3 id="bdName">Bills</h3>
     <div class="modal-sub" id="bdSub"></div>
 
-    <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px;">
+    <div data-perm="bills" style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px;">
       <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">Upload a Bill</div>
       <form class="inline-form" id="billUploadForm">
         <div class="field"><label>Bill Image or PDF</label><input type="file" id="bFile" accept="image/*,application/pdf" required /></div>
@@ -1720,9 +1788,9 @@ function accountLabel(v) { return ACCOUNT_LABELS[v] || v; }
 function defaultState() {
   return {
     clubName: "Rotaract Club of Madhyapur Finance Tracker",
-    openingCash: 0,
-    openingOnline: 0,
-    openingBank: 0,
+    tenures: [],
+    activeTenureId: null,
+    currentTenureId: null,
     members: [],
     events: [],
     transactions: [],
@@ -1734,6 +1802,7 @@ function defaultState() {
   };
 }
 
+const CURRENT_TENURE_KEY = "cft-current-tenure-v1";
 let state = defaultState();
 let paymentTargetMemberId = null;
 let editMemberTargetId = null;
@@ -1831,7 +1900,26 @@ function notifyError(err) {
 /* ---------------- Normalize snake_case DB rows into the shapes the
    render functions below expect. ---------------- */
 function normalizeMember(r) {
-  return { id: r.id, name: r.name, designation: r.designation || "", phone: r.phone || "", annualDues: Number(r.annual_dues) || 0 };
+  return {
+    id: r.id, name: r.name, designation: r.designation || "", phone: r.phone || "",
+    // Dues are per-tenure now — this reflects whichever tenure was passed
+    // to GET /api/members (defaults to the active one).
+    annualDues: Number(r.tenure_dues) || 0, duesRowId: r.dues_row_id || null,
+  };
+}
+function normalizeTenure(r) {
+  return {
+    id: r.id, label: r.label,
+    startDate: r.start_date ? String(r.start_date).slice(0, 10) : "",
+    endDate: r.end_date ? String(r.end_date).slice(0, 10) : "",
+    status: r.status,
+    openingCash: Number(r.opening_cash) || 0,
+    openingOnline: Number(r.opening_online) || 0,
+    openingBank: Number(r.opening_bank) || 0,
+    closingCash: r.closing_cash !== null && r.closing_cash !== undefined ? Number(r.closing_cash) : null,
+    closingOnline: r.closing_online !== null && r.closing_online !== undefined ? Number(r.closing_online) : null,
+    closingBank: r.closing_bank !== null && r.closing_bank !== undefined ? Number(r.closing_bank) : null,
+  };
 }
 function normalizeEvent(r) {
   return {
@@ -1858,12 +1946,7 @@ function normalizeBill(r) {
   };
 }
 function normalizeSettings(r) {
-  return {
-    clubName: r.club_name || "Rotaract Club of Madhyapur Finance Tracker",
-    openingCash: Number(r.opening_cash) || 0,
-    openingOnline: Number(r.opening_online) || 0,
-    openingBank: Number(r.opening_bank) || 0,
-  };
+  return { clubName: r.club_name || "Rotaract Club of Madhyapur Finance Tracker" };
 }
 function normalizeActivity(r) {
   return {
@@ -1909,30 +1992,64 @@ function normalizeLiability(r) {
   };
 }
 
+function currentTenure() { return state.tenures.find((t) => t.id === state.currentTenureId); }
+function isViewingClosedTenure() { const t = currentTenure(); return !!t && t.status === "closed"; }
+
 async function loadAllData() {
-  const [settings, members, events, transactions, bills] = await Promise.all([
+  const [settings, tenures] = await Promise.all([
     api.get("/api/settings"),
-    api.get("/api/members"),
-    api.get("/api/events"),
-    api.get("/api/transactions"),
-    api.get("/api/bills"),
+    api.get("/api/tenures"),
   ]);
+  const normalizedTenures = (tenures || []).map(normalizeTenure);
+  const active = normalizedTenures.find((t) => t.status === "active");
+  const activeTenureId = active ? active.id : null;
+  let savedTenureId = null;
+  try { savedTenureId = localStorage.getItem(CURRENT_TENURE_KEY); } catch (e) { /* ignore */ }
+  const currentTenureId = (savedTenureId && normalizedTenures.some((t) => t.id === savedTenureId))
+    ? savedTenureId
+    : activeTenureId;
+
   state = Object.assign(
     normalizeSettings(settings || {}),
     {
-      members: (members || []).map(normalizeMember),
-      events: (events || []).map(normalizeEvent),
-      transactions: (transactions || []).map(normalizeTransaction),
-      bills: (bills || []).map(normalizeBill),
+      tenures: normalizedTenures,
+      activeTenureId,
+      currentTenureId,
       activity: [],
       liabilities: [],
     }
   );
+
+  await loadTenureScopedData();
   // Fetched separately and non-fatally: these features need DB migrations
   // (activity_log / liabilities / esewa tables) that may not be applied
   // everywhere yet, and a hiccup here should never block sign-in or the
   // rest of the app.
   await Promise.all([refreshActivity(), refreshLiabilities(), refreshEsewa()]);
+}
+
+// Fetches members/events/transactions/bills scoped to state.currentTenureId
+// — called on initial load and every time the year switcher changes.
+async function loadTenureScopedData() {
+  const qs = state.currentTenureId ? `?tenureId=${encodeURIComponent(state.currentTenureId)}` : "";
+  const [members, events, transactions, bills] = await Promise.all([
+    api.get(`/api/members${qs}`),
+    api.get(`/api/events${qs}`),
+    api.get(`/api/transactions${qs}`),
+    api.get(`/api/bills${qs}`),
+  ]);
+  state.members = (members || []).map(normalizeMember);
+  state.events = (events || []).map(normalizeEvent);
+  state.transactions = (transactions || []).map(normalizeTransaction);
+  state.bills = (bills || []).map(normalizeBill);
+}
+
+async function switchTenure(tenureId) {
+  if (!tenureId || tenureId === state.currentTenureId) return;
+  state.currentTenureId = tenureId;
+  try { localStorage.setItem(CURRENT_TENURE_KEY, tenureId); } catch (e) { /* ignore */ }
+  await loadTenureScopedData();
+  renderAll();
 }
 
 // Re-fetches eSewa uploads + transactions — called after import/delete so
@@ -2002,6 +2119,9 @@ function hideAuthScreen() {
 }
 function logout() {
   clearAuth();
+  myPermissions = [];
+  myPermissionExpires = {};
+  applyPermissions();
   showAuthScreen("");
   document.getElementById("loginForm").reset();
 }
@@ -2126,6 +2246,16 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   errEl.textContent = "";
   try {
     const data = await api.post("/api/auth/login", { email, password });
+    if (data.admin) {
+      // Admin credentials: hand the admin token to the admin page.
+      try {
+        localStorage.setItem("cft-admin-v1", JSON.stringify({ token: data.token, email: data.user?.email || email }));
+      } catch (e) {
+        throw new Error("Could not save the admin session (browser storage is blocked).");
+      }
+      window.location.href = "/admin.html";
+      return;
+    }
     setAuth({ token: data.token, name: data.user?.name || email, email });
     await bootApp();
   } catch (err) {
@@ -2156,13 +2286,66 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
   }
 });
 
+// What this member is allowed to change (granted by the admin). The server is
+// the real gatekeeper; this only hides controls they can't use. Read fresh from
+// /api/auth/me at sign-in and on every presence ping, so grants and revokes show
+// up without a re-login.
+let myPermissions = [];
+// Timed grants: permission key -> ISO time it stops. Judged against the server's
+// clock (serverClockOffset), so a wrong device clock can't extend or cut access.
+let myPermissionExpires = {};
+let serverClockOffset = 0;
+const ALL_PERMISSIONS = ["members", "transactions", "event_transactions", "esewa", "events", "bills", "settings"];
+function can(key) {
+  if (!myPermissions.includes(key)) return false;
+  const at = myPermissionExpires[key];
+  return !at || Date.parse(at) > Date.now() + serverClockOffset;
+}
+function applyPermissions() {
+  document.body.setAttribute("data-lock", ALL_PERMISSIONS.filter((k) => !can(k)).join(" "));
+  // Lost access to Settings while looking at it: step back to the dashboard.
+  const open = document.querySelector(".tab.active");
+  if (open && open.id === "tab-settings" && !can("settings")) goToTab("overview");
+}
+async function refreshPermissions() {
+  const me = await apiFetch("/api/auth/me");
+  myPermissions = Array.isArray(me && me.permissions) ? me.permissions : [];
+  myPermissionExpires = (me && me.permissionExpires) || {};
+  const serverNow = Date.parse(me && me.serverTime);
+  serverClockOffset = Number.isFinite(serverNow) ? serverNow - Date.now() : 0;
+  applyPermissions();
+}
+
+// While the app is open, tell the server we're still here every 2 minutes so
+// the admin page can show who's online. Failures are ignored on purpose.
+let presenceTimer = null;
+let expiryTimer = null;
+function startPresencePing() {
+  if (!expiryTimer) {
+    expiryTimer = setInterval(() => { if (getAuth()) applyPermissions(); }, 15 * 1000);
+  }
+  if (presenceTimer) return;
+  presenceTimer = setInterval(() => {
+    if (!getAuth()) return;
+    refreshPermissions().catch(() => {});
+  }, 2 * 60 * 1000);
+}
+
 // Runs after a successful login/register, and on page load if a token
 // is already stored: fetch all shared data, then render the app.
 async function bootApp() {
   try {
     await loadAllData();
+    try {
+      await refreshPermissions();
+    } catch (err) {
+      if (err.message === "Session expired") throw err;
+      myPermissions = []; myPermissionExpires = {}; // can't tell what they may do: show view-only; the server still enforces
+      applyPermissions();
+    }
     hideAuthScreen();
     renderAll();
+    startPresencePing();
   } catch (err) {
     if (err.message !== "Session expired") {
       showAuthScreen(err.message || "Could not load data.");
@@ -2194,9 +2377,15 @@ function eventById(id) { return state.events.find((e) => e.id === id); }
 function memberById(id) { return state.members.find((m) => m.id === id); }
 
 /* ---------------- Derived totals ---------------- */
+// Opening balances come from the currently selected tenure — each tenure
+// carries forward its own opening balances from the previous tenure's
+// computed closing balances (see POST /api/tenures/:id/close).
+function tenureOpeningByAccount() {
+  const t = currentTenure();
+  return { Cash: t ? t.openingCash : 0, Online: t ? t.openingOnline : 0, Bank: t ? t.openingBank : 0 };
+}
 function accountTotal(account) {
-  const openingByAccount = { Cash: state.openingCash, Online: state.openingOnline, Bank: state.openingBank };
-  const opening = Number(openingByAccount[account]) || 0;
+  const opening = Number(tenureOpeningByAccount()[account]) || 0;
   const delta = state.transactions
     .filter((t) => t.account === account)
     .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
@@ -2287,7 +2476,8 @@ function monthlyTotals() {
   return [...map.values()].sort((a, b) => (a.key < b.key ? 1 : -1));
 }
 function openingBalanceBeforeMonth(key) {
-  const opening = (Number(state.openingCash) || 0) + (Number(state.openingBank) || 0);
+  const ob = tenureOpeningByAccount();
+  const opening = (Number(ob.Cash) || 0) + (Number(ob.Online) || 0) + (Number(ob.Bank) || 0);
   const priorDelta = state.transactions
     .filter((t) => monthKey(t.date) < key)
     .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
@@ -2327,10 +2517,9 @@ function transactionMatchesTypeFilter(t, filterVal) {
 function renderAll() {
   document.getElementById("clubNameTitle").textContent = state.clubName || "Rotaract Club of Madhyapur Finance Tracker";
   document.getElementById("clubNameInput").value = state.clubName || "";
-  document.getElementById("openCash").value = state.openingCash || 0;
-  document.getElementById("openOnline").value = state.openingOnline || 0;
-  document.getElementById("openBank").value = state.openingBank || 0;
 
+  renderTenureSwitcher();
+  renderTenureSettingsCard();
   refreshStaticSelects();
   renderOverview();
   renderMembers();
@@ -2450,8 +2639,7 @@ function lastNMonthKeys(n) {
   return out;
 }
 function accountBalanceAsOfMonthEnd(account, key) {
-  const openingByAccount = { Cash: state.openingCash, Online: state.openingOnline, Bank: state.openingBank };
-  const opening = Number(openingByAccount[account]) || 0;
+  const opening = Number(tenureOpeningByAccount()[account]) || 0;
   const delta = state.transactions
     .filter((t) => t.account === account && monthKey(t.date) <= key)
     .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
@@ -2650,6 +2838,9 @@ function renderOverview() {
 }
 
 function renderMembers() {
+  const readOnly = isViewingClosedTenure();
+  document.querySelectorAll("#memberForm input, #memberForm button").forEach((el) => { el.disabled = readOnly; });
+
   const totalMembers = state.members.length;
   const paidCount = state.members.filter((m) => memberStatus(m) === "paid").length;
   const partialCount = state.members.filter((m) => memberStatus(m) === "partial").length;
@@ -2686,9 +2877,9 @@ function renderMembers() {
         <td class="num" style="color:var(--red)">${fmt(remaining)}</td>
         <td><span class="badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
         <td style="white-space:nowrap;">
-          ${remaining > 0 ? `<button class="btn small" onclick="openPaymentModal('${m.id}')">Record Payment</button>` : ""}
-          <button class="btn secondary small" onclick="openEditMemberModal('${m.id}')">Edit</button>
-          <button class="btn secondary small" onclick="deleteMember('${m.id}')">Delete</button>
+          ${remaining > 0 && !readOnly ? `<button class="btn small" data-perm="members|transactions" onclick="openPaymentModal('${m.id}')">Record Payment</button>` : ""}
+          <button class="btn secondary small" data-perm="members" onclick="openEditMemberModal('${m.id}')">Edit</button>
+          <button class="btn secondary small" data-perm="members" onclick="deleteMember('${m.id}')">Delete</button>
         </td>
       </tr>
     `;
@@ -2697,6 +2888,9 @@ function renderMembers() {
 }
 
 function renderTransactions() {
+  const readOnly = isViewingClosedTenure();
+  document.querySelectorAll("#txnForm input, #txnForm select, #txnForm button").forEach((el) => { el.disabled = readOnly; });
+
   const months = monthlyTotals();
   const filterEl = document.getElementById("monthFilter");
   const prevValue = filterEl.value || "all";
@@ -2742,13 +2936,16 @@ function renderTransactions() {
       <td>${escapeHtml(t.paymentMethod || "-")}</td>
       <td>${txnEventName(t) ? `<span class="badge neutral">${escapeHtml(txnEventName(t))}</span>` : "-"}</td>
       <td>${escapeHtml(t.notes || "-")}</td>
-      <td><button class="btn secondary small" onclick="deleteTransaction('${t.id}')">Delete</button></td>
+      <td>${readOnly ? "-" : `<button class="btn secondary small" data-perm="${t.eventId ? "event_transactions" : t.memberId ? "members|transactions" : "transactions"}" onclick="deleteTransaction('${t.id}')">Delete</button>`}</td>
     </tr>
   `).join("");
   document.getElementById("txnEmpty").style.display = rows.length ? "none" : "block";
 }
 
 function renderEvents() {
+  const readOnly = isViewingClosedTenure();
+  document.querySelectorAll("#eventForm input, #eventForm select, #eventForm textarea, #eventForm button").forEach((el) => { el.disabled = readOnly; });
+
   const totalBudget = state.events.reduce((s, e) => s + (Number(e.budget) || 0), 0);
   let totalIncome = 0, totalExpense = 0;
   state.events.forEach((e) => { const t = eventTotals(e.id); totalIncome += t.income; totalExpense += t.expense; });
@@ -2907,7 +3104,7 @@ function renderEsewa() {
       <td>${escapeHtml(t.channel || "-")}</td>
       <td>${escapeHtml(t.referenceCode || "-")}</td>
       <td>
-        <button type="button" class="kebab-btn" onclick="toggleEsewaKebab(event, '${t.id}')" aria-label="Row actions">
+        <button type="button" class="kebab-btn" data-perm="esewa" onclick="toggleEsewaKebab(event, '${t.id}')" aria-label="Row actions">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>
         </button>
       </td>
@@ -2928,7 +3125,7 @@ function renderEsewa() {
       <td class="num" style="color:var(--green)">${u.insertedCount}</td>
       <td class="num" style="color:var(--muted)">${u.duplicateCount}</td>
       <td>${escapeHtml(u.byName)}</td>
-      <td><button class="btn secondary small" onclick="deleteEsewaUpload('${u.id}')">Delete</button></td>
+      <td><button class="btn secondary small" data-perm="esewa" onclick="deleteEsewaUpload('${u.id}')">Delete</button></td>
     </tr>
   `).join("");
   document.getElementById("esewaUploadEmpty").style.display = uploadsSorted.length ? "none" : "block";
@@ -2971,8 +3168,8 @@ function renderLiabilities() {
         <td class="num" style="color:var(--red)">${fmt(remaining)}</td>
         <td><span class="badge ${l.status === "paid" ? "paid" : "unpaid"}">${l.status === "paid" ? "Paid" : "Pending"}</span></td>
         <td style="white-space:nowrap;">
-          ${remaining > 0 ? `<button class="btn small" onclick="openLiabilityPaymentModal('${l.id}')">Record Payment</button>` : ""}
-          <button class="btn secondary small" onclick="deleteLiability('${l.id}')">Delete</button>
+          ${remaining > 0 ? `<button class="btn small" data-perm="transactions" onclick="openLiabilityPaymentModal('${l.id}')">Record Payment</button>` : ""}
+          <button class="btn secondary small" data-perm="transactions" onclick="deleteLiability('${l.id}')">Delete</button>
         </td>
       </tr>
     `;
@@ -3071,6 +3268,13 @@ const ACTIVITY_ENTITY_LABEL = {
   event: "Event",
   bill: "Bill",
   liability: "Liability",
+  esewa: "eSewa",
+  tenure: "Tenure",
+};
+const ACTIVITY_ACTION = {
+  create: { label: "Created", badge: "income" },
+  update: { label: "Edited", badge: "partial" },
+  delete: { label: "Deleted", badge: "expense" },
 };
 function formatActivityWhen(iso) {
   const d = new Date(iso);
@@ -3080,8 +3284,10 @@ function formatActivityWhen(iso) {
 function renderActivity() {
   const deletedCount = state.activity.filter((a) => a.action === "delete").length;
   const editedCount = state.activity.filter((a) => a.action === "update").length;
+  const createdCount = state.activity.filter((a) => a.action === "create").length;
   document.getElementById("activityStats").innerHTML = `
     ${statCard("Total Logged Events", state.activity.length, "blue")}
+    ${statCard("Additions", createdCount, "green")}
     ${statCard("Deletions", deletedCount, "red")}
     ${statCard("Edits", editedCount, "amber")}
   `;
@@ -3091,10 +3297,10 @@ function renderActivity() {
   tbody.innerHTML = rows.map((a) => `
     <tr>
       <td>${formatActivityWhen(a.at)}</td>
-      <td><span class="badge ${a.action === "delete" ? "expense" : "partial"}">${a.action === "delete" ? "Deleted" : "Edited"}</span></td>
+      <td><span class="badge ${(ACTIVITY_ACTION[a.action] || ACTIVITY_ACTION.update).badge}">${(ACTIVITY_ACTION[a.action] || ACTIVITY_ACTION.update).label}</span></td>
       <td>${escapeHtml(ACTIVITY_ENTITY_LABEL[a.entityType] || a.entityType)}</td>
       <td>${escapeHtml(a.summary)}</td>
-      <td>${escapeHtml(a.byName)}</td>
+      <td title="${escapeHtml(a.byEmail)}">${escapeHtml(a.byName)}</td>
     </tr>
   `).join("");
   document.getElementById("activityEmpty").style.display = rows.length ? "none" : "block";
@@ -3136,7 +3342,7 @@ function renderBillThumbGrid(bills) {
   const grid = document.getElementById("bdGrid");
   grid.innerHTML = sorted.map((b) => `
     <div class="bill-thumb-card">
-      <button class="bill-delete-btn" onclick="deleteBill('${b.id}')" title="Delete">&times;</button>
+      <button class="bill-delete-btn" data-perm="bills" onclick="deleteBill('${b.id}')" title="Delete">&times;</button>
       ${b.fileType && b.fileType.startsWith("image/")
         ? `<img src="${b.fileData}" onclick="viewBillImage('${b.id}')" />`
         : `<div class="bill-pdf-icon" onclick="viewBillImage('${b.id}')">📄</div>`}
@@ -3525,7 +3731,7 @@ document.getElementById("memberForm").addEventListener("submit", async (e) => {
   const dues = Number(document.getElementById("mDues").value);
   if (!name || !dues) return;
   try {
-    const row = await api.post("/api/members", { name, designation, phone, annualDues: dues });
+    const row = await api.post("/api/members", { name, designation, phone, duesAmount: dues });
     state.members.push(normalizeMember(row));
     document.getElementById("memberForm").reset();
     renderAll();
@@ -3557,6 +3763,7 @@ function openEditMemberModal(memberId) {
   document.getElementById("editMDesignation").value = m.designation || "";
   document.getElementById("editMPhone").value = m.phone || "";
   document.getElementById("editMDues").value = m.annualDues || 0;
+  document.getElementById("editMDues").disabled = isViewingClosedTenure();
   document.getElementById("editMemberOverlay").classList.add("open");
 }
 function closeEditMemberModal() {
@@ -3567,13 +3774,23 @@ async function submitEditMember() {
   if (!editMemberTargetId) return;
   const name = document.getElementById("editMName").value.trim();
   const phone = document.getElementById("editMPhone").value.trim();
-  const dues = Number(document.getElementById("editMDues").value);
-  if (!name || !dues || dues < 0) { alert("Please enter a valid name and dues amount."); return; }
   const designation = document.getElementById("editMDesignation").value.trim();
+  if (!name) { alert("Please enter a valid name."); return; }
+  const dues = Number(document.getElementById("editMDues").value);
+  const editingDues = !isViewingClosedTenure();
+  if (editingDues && (!dues || dues < 0)) { alert("Please enter a valid dues amount."); return; }
   try {
-    const row = await api.put(`/api/members/${editMemberTargetId}`, { name, designation, phone, annualDues: dues });
+    const row = await api.put(`/api/members/${editMemberTargetId}`, { name, designation, phone });
+    let duesRow = null;
+    if (editingDues && state.currentTenureId) {
+      duesRow = await api.put(`/api/members/${editMemberTargetId}/dues`, { tenureId: state.currentTenureId, duesAmount: dues });
+    }
     const idx = state.members.findIndex((m) => m.id === editMemberTargetId);
-    if (idx !== -1) state.members[idx] = normalizeMember(row);
+    if (idx !== -1) {
+      state.members[idx] = normalizeMember(row);
+      if (duesRow) { state.members[idx].annualDues = Number(duesRow.dues_amount) || 0; state.members[idx].duesRowId = duesRow.id; }
+      else { state.members[idx].annualDues = dues; }
+    }
     closeEditMemberModal();
     await refreshActivity();
     renderAll();
@@ -3682,6 +3899,12 @@ document.getElementById("txnForm").addEventListener("submit", async (e) => {
   const eventVal = document.getElementById("tEvent").value;
   const notes = document.getElementById("tNotes").value.trim();
   if (!date || !description || !amount) return;
+  if (eventVal !== "none" ? !can("event_transactions") : !can("transactions")) {
+    notifyError(new Error(eventVal !== "none"
+      ? "You don't have permission to add event transactions."
+      : "You don't have permission to add transactions that aren't linked to an event."));
+    return;
+  }
 
   try {
     const row = await api.post("/api/transactions", {
@@ -3786,7 +4009,7 @@ function renderEventTransactionTable(eventId) {
       <td class="num" style="color:${t.type === "Income" ? "var(--green)" : "var(--red)"}">${t.type === "Income" ? "+" : "-"}${fmt(t.amount)}</td>
       <td>${escapeHtml(t.paymentMethod || "-")}</td>
       <td>${escapeHtml(t.notes || "-")}</td>
-      <td><button class="btn secondary small" onclick="deleteEventTransaction('${t.id}')">Delete</button></td>
+      <td><button class="btn secondary small" data-perm="event_transactions" onclick="deleteEventTransaction('${t.id}')">Delete</button></td>
     </tr>
   `).join("");
   document.getElementById("edEmpty").style.display = rows.length ? "none" : "block";
@@ -3810,8 +4033,8 @@ function renderEventLiabilityTable(eventId) {
         <td class="num" style="color:var(--red)">${fmt(remaining)}</td>
         <td><span class="badge ${l.status === "paid" ? "paid" : "unpaid"}">${l.status === "paid" ? "Paid" : "Pending"}</span></td>
         <td style="white-space:nowrap;">
-          ${remaining > 0 ? `<button class="btn small" onclick="openLiabilityPaymentModal('${l.id}')">Record Payment</button>` : ""}
-          <button class="btn secondary small" onclick="deleteLiability('${l.id}')">Delete</button>
+          ${remaining > 0 ? `<button class="btn small" data-perm="transactions" onclick="openLiabilityPaymentModal('${l.id}')">Record Payment</button>` : ""}
+          <button class="btn secondary small" data-perm="transactions" onclick="deleteLiability('${l.id}')">Delete</button>
         </td>
       </tr>
     `;
@@ -3911,16 +4134,135 @@ async function saveClubName() {
     notifyError(err);
   }
 }
-async function saveOpeningBalances() {
-  const openingCash = Number(document.getElementById("openCash").value) || 0;
-  const openingOnline = Number(document.getElementById("openOnline").value) || 0;
-  const openingBank = Number(document.getElementById("openBank").value) || 0;
+/* ---------------- Rotary tenure (year switcher + handover) ---------------- */
+function renderTenureSwitcher() {
+  const select = document.getElementById("tenureSwitcher");
+  if (!select) return;
+  const sorted = [...state.tenures].sort((a, b) => (a.startDate < b.startDate ? 1 : -1));
+  select.innerHTML = sorted.map((t) =>
+    `<option value="${t.id}">${escapeHtml(t.label)}${t.status === "closed" ? " (closed)" : ""}</option>`
+  ).join("");
+  select.value = state.currentTenureId || "";
+  select.style.display = sorted.length ? "" : "none";
+
+  const banner = document.getElementById("closedTenureBanner");
+  if (banner) {
+    const closed = isViewingClosedTenure();
+    banner.style.display = closed ? "flex" : "none";
+    if (closed) banner.textContent = `Viewing closed tenure "${currentTenure().label}" — read only.`;
+  }
+}
+
+function renderTenureSettingsCard() {
+  const bootstrapEl = document.getElementById("tenureBootstrap");
+  const summaryEl = document.getElementById("tenureSummary");
+  if (!bootstrapEl || !summaryEl) return;
+
+  if (!state.tenures.length) {
+    bootstrapEl.style.display = "";
+    summaryEl.style.display = "none";
+    api.get("/api/tenures/bootstrap-defaults").then((d) => {
+      document.getElementById("tenureBootstrapCash").value = Number(d?.opening_cash) || 0;
+      document.getElementById("tenureBootstrapOnline").value = Number(d?.opening_online) || 0;
+      document.getElementById("tenureBootstrapBank").value = Number(d?.opening_bank) || 0;
+    }).catch(() => {});
+    return;
+  }
+
+  bootstrapEl.style.display = "none";
+  summaryEl.style.display = "";
+  const active = state.tenures.find((t) => t.id === state.activeTenureId);
+  document.getElementById("tenureSummaryLabel").value = active ? active.label : "—";
+  document.getElementById("tenureSummaryCash").value = active ? fmt(accountTotalForTenure(active, "Cash")) : "—";
+  document.getElementById("tenureSummaryOnline").value = active ? fmt(accountTotalForTenure(active, "Online")) : "—";
+  document.getElementById("tenureSummaryBank").value = active ? fmt(accountTotalForTenure(active, "Bank")) : "—";
+  document.getElementById("tenureCloseBtn").style.display = active ? "" : "none";
+}
+
+// Live balance for a specific tenure (used for the active tenure's summary
+// and the close-handover preview) — only correct when `tenure` is the one
+// currently loaded into state.transactions (i.e. the active tenure, since
+// that's what's fetched by default).
+function accountTotalForTenure(tenure, account) {
+  const opening = { Cash: tenure.openingCash, Online: tenure.openingOnline, Bank: tenure.openingBank }[account] || 0;
+  const delta = state.transactions
+    .filter((t) => t.account === account)
+    .reduce((sum, t) => sum + (t.type === "Income" ? t.amount : -t.amount), 0);
+  return opening + delta;
+}
+
+async function createFirstTenure() {
+  const label = document.getElementById("tenureBootstrapLabel").value.trim();
+  const startDate = document.getElementById("tenureBootstrapStart").value;
+  const endDate = document.getElementById("tenureBootstrapEnd").value;
+  const openingCash = Number(document.getElementById("tenureBootstrapCash").value) || 0;
+  const openingOnline = Number(document.getElementById("tenureBootstrapOnline").value) || 0;
+  const openingBank = Number(document.getElementById("tenureBootstrapBank").value) || 0;
+  if (!label || !startDate || !endDate) { alert("Please fill in the tenure label and dates."); return; }
   try {
-    const row = await api.put("/api/settings", { openingCash, openingOnline, openingBank });
-    Object.assign(state, normalizeSettings(row));
+    const tenure = await api.post("/api/tenures", { label, startDate, endDate, openingCash, openingOnline, openingBank });
+    state.tenures.push(normalizeTenure(tenure));
+    state.activeTenureId = tenure.id;
+    state.currentTenureId = tenure.id;
+    try { localStorage.setItem(CURRENT_TENURE_KEY, tenure.id); } catch (e) { /* ignore */ }
+    await loadTenureScopedData();
     renderAll();
   } catch (err) {
     notifyError(err);
+  }
+}
+
+function openTenureCloseModal() {
+  const active = state.tenures.find((t) => t.id === state.activeTenureId);
+  if (!active) return;
+  const suggested = nextTenureLabelAndDates(active);
+  document.getElementById("tenureCloseSummary").innerHTML = `
+    Closing <strong>${escapeHtml(active.label)}</strong> with:<br>
+    Cash: ${fmt(accountTotalForTenure(active, "Cash"))} &bull;
+    Online: ${fmt(accountTotalForTenure(active, "Online"))} &bull;
+    Bank: ${fmt(accountTotalForTenure(active, "Bank"))}
+  `;
+  document.getElementById("tenureCloseNextLabel").value = suggested.label;
+  document.getElementById("tenureCloseNextStart").value = suggested.startDate;
+  document.getElementById("tenureCloseNextEnd").value = suggested.endDate;
+  document.getElementById("tenureCloseOverlay").classList.add("open");
+}
+function closeTenureCloseModal() {
+  document.getElementById("tenureCloseOverlay").classList.remove("open");
+}
+function nextTenureLabelAndDates(tenure) {
+  const prevEnd = new Date(tenure.endDate + "T00:00:00Z");
+  const startYear = prevEnd.getUTCFullYear() + (prevEnd.getUTCMonth() >= 6 ? 1 : 0);
+  const startDate = new Date(Date.UTC(startYear, 6, 1));
+  const endDate = new Date(Date.UTC(startYear + 1, 5, 30));
+  const iso = (d) => d.toISOString().slice(0, 10);
+  return { label: `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`, startDate: iso(startDate), endDate: iso(endDate) };
+}
+async function confirmTenureClose() {
+  const active = state.tenures.find((t) => t.id === state.activeTenureId);
+  if (!active) return;
+  const label = document.getElementById("tenureCloseNextLabel").value.trim();
+  const startDate = document.getElementById("tenureCloseNextStart").value;
+  const endDate = document.getElementById("tenureCloseNextEnd").value;
+  const btn = document.getElementById("tenureCloseConfirmBtn");
+  btn.disabled = true; btn.textContent = "Closing...";
+  try {
+    const result = await api.post(`/api/tenures/${active.id}/close`, { label, startDate, endDate });
+    const closedIdx = state.tenures.findIndex((t) => t.id === result.closedTenure.id);
+    if (closedIdx !== -1) state.tenures[closedIdx] = normalizeTenure(result.closedTenure);
+    state.tenures.push(normalizeTenure(result.newTenure));
+    state.activeTenureId = result.newTenure.id;
+    state.currentTenureId = result.newTenure.id;
+    try { localStorage.setItem(CURRENT_TENURE_KEY, result.newTenure.id); } catch (e) { /* ignore */ }
+    closeTenureCloseModal();
+    await loadTenureScopedData();
+    await refreshActivity();
+    renderAll();
+    alert(`Closed "${result.closedTenure.label}" and started "${result.newTenure.label}".`);
+  } catch (err) {
+    notifyError(err);
+  } finally {
+    btn.disabled = false; btn.textContent = "Confirm & Close";
   }
 }
 

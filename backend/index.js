@@ -20,11 +20,14 @@ app.use("/api/bills", require("./routes/bills"));
 app.use("/api/liabilities", require("./routes/liabilities"));
 app.use("/api/activity", require("./routes/activity"));
 app.use("/api/esewa", require("./routes/esewa"));
+app.use("/api/tenures", require("./routes/tenures"));
+app.use("/api/admin", require("./routes/admin"));
 
 // Serve the frontend (single static HTML file) so one deployed service
 // covers both the API and the UI — no separate static host needed.
 const frontendDir = path.join(__dirname, "..", "frontend");
 app.use(express.static(frontendDir));
+app.get("/admin", (req, res) => res.sendFile(path.join(frontendDir, "admin.html")));
 app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api/")) return next();
   res.sendFile(path.join(frontendDir, "club-finance-tracker.html"));
@@ -35,7 +38,7 @@ app.get("*", (req, res, next) => {
 app.use((err, req, res, next) => {
   console.error(err);
   if (res.headersSent) return next(err);
-  res.status(500).json({ error: "Server error, please try again." });
+  res.status(err.status || 500).json({ error: err.status ? err.message : "Server error, please try again." });
 });
 
 // Last-resort safety nets: log and keep running rather than take the

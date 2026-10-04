@@ -2,8 +2,10 @@ const router = require("express").Router();
 const pool = require("../db");
 const requireAuth = require("../middleware/auth");
 const asyncHandler = require("./asyncHandler");
+const { requirePermission } = require("../lib/permissions");
 const { logActivity } = require("../lib/activityLog");
 const { parseEsewaWorkbook } = require("../lib/esewaParse");
+const { resolveActiveTenureId } = require("../lib/tenure");
 
 router.use(requireAuth);
 
@@ -20,7 +22,7 @@ router.get("/transactions", asyncHandler(async (req, res) => {
 // Accepts the raw .xls/.xlsx file as a base64 data URL (same pattern the
 // Bills upload uses) so the frontend doesn't need a parsing library —
 // parsing happens here, server-side, with the xlsx package.
-router.post("/upload", asyncHandler(async (req, res) => {
+router.post("/upload", requirePermission("esewa"), asyncHandler(async (req, res) => {
   const { fileName, fileData } = req.body;
   if (!fileName || !fileData) {
     return res.status(400).json({ error: "fileName and fileData are required" });
@@ -78,6 +80,14 @@ router.post("/upload", asyncHandler(async (req, res) => {
 
     await client.query("commit");
 
+    await logActivity({
+      action: "create",
+      entityType: "esewa",
+      entityId: upload.id,
+      summary: `Uploaded eSewa statement "${fileName}" — ${inserted.length} new entr${inserted.length === 1 ? "y" : "ies"}, ${duplicateCount} duplicate${duplicateCount === 1 ? "" : "s"} skipped`,
+      user: req.user,
+    });
+
     res.json({
       upload,
       transactions: inserted,
@@ -100,7 +110,7 @@ router.post("/upload", asyncHandler(async (req, res) => {
 // transferred a second time. Runs as one DB transaction (with a row lock on
 // the eSewa row) so a double-click or two concurrent requests can't both
 // succeed and double-count the same money.
-router.post("/transactions/:id/transfer", asyncHandler(async (req, res) => {
+router.post("/transactions/:id/transfer", requirePermission("esewa"), asyncHandler(async (req, res) => {
   const { date, description, type, category, account, amount, paymentMethod, notes, eventId } = req.body;
   if (!date || !description || !type || !category || !account || !amount) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -124,11 +134,17 @@ router.post("/transactions/:id/transfer", asyncHandler(async (req, res) => {
       return res.status(409).json({ error: "This eSewa entry has already been transferred." });
     }
 
+    const tenureId = await resolveActiveTenureId(client);
+    if (!tenureId) {
+      await client.query("rollback");
+      return res.status(400).json({ error: "No active tenure — start one in Settings first." });
+    }
+
     const txnRes = await client.query(
       `insert into transactions
-       (date, description, type, category, account, amount, payment_method, notes, member_id, event_id)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning *`,
-      [date, description, type, category, account, amount, paymentMethod || "", notes || "", null, eventId || null]
+       (date, description, type, category, account, amount, payment_method, notes, member_id, event_id, tenure_id)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning *`,
+      [date, description, type, category, account, amount, paymentMethod || "", notes || "", null, eventId || null, tenureId]
     );
     const transaction = txnRes.rows[0];
 
@@ -138,6 +154,14 @@ router.post("/transactions/:id/transfer", asyncHandler(async (req, res) => {
     );
 
     await client.query("commit");
+    await logActivity({
+      action: "create",
+      entityType: "transaction",
+      entityId: transaction.id,
+      summary: `Transferred eSewa entry into Transactions as "${description}" — Rs ${amount} on ${date}`,
+      after: transaction,
+      user: req.user,
+    });
     res.json({ transaction, esewaTransaction: linkedRes.rows[0] });
   } catch (err) {
     await client.query("rollback");
@@ -148,7 +172,7 @@ router.post("/transactions/:id/transfer", asyncHandler(async (req, res) => {
   }
 }));
 
-router.delete("/transactions/:id", asyncHandler(async (req, res) => {
+router.delete("/transactions/:id", requirePermission("esewa"), asyncHandler(async (req, res) => {
   const existing = await pool.query("select * from esewa_transactions where id = $1", [req.params.id]);
   const txn = existing.rows[0];
   if (!txn) return res.status(404).json({ error: "eSewa transaction not found" });
@@ -171,7 +195,7 @@ router.delete("/transactions/:id", asyncHandler(async (req, res) => {
 // undo uploading the wrong file. Transactions from an overlapping upload
 // that were skipped as duplicates belong to whichever upload inserted them
 // first, so they're unaffected unless that earlier upload is deleted too.
-router.delete("/uploads/:id", asyncHandler(async (req, res) => {
+router.delete("/uploads/:id", requirePermission("esewa"), asyncHandler(async (req, res) => {
   const existing = await pool.query("select * from esewa_uploads where id = $1", [req.params.id]);
   const upload = existing.rows[0];
   if (!upload) return res.status(404).json({ error: "Upload not found" });

@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const pool = require("../db");
 const asyncHandler = require("./asyncHandler");
 const requireAuth = require("../middleware/auth");
+const adminLogin = require("../lib/adminLogin");
+const { effectivePermissions, activeExpiries } = require("../lib/permissions");
 
 function signToken(user) {
   return jwt.sign(
@@ -39,7 +41,7 @@ router.post("/register", asyncHandler(async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      "insert into users (name, email, password_hash) values ($1,$2,$3) returning id, name, email",
+      "insert into users (name, email, password_hash, last_login_at, last_seen_at) values ($1,$2,$3, now(), now()) returning id, name, email, permissions",
       [name, email, hash]
     );
 
@@ -74,6 +76,28 @@ router.post("/login", asyncHandler(async (req, res) => {
     });
   }
 
+  // Admin sign-in shares this form. If the email is the admin's and the
+  // password matches the admin's, issue an admin token; otherwise fall
+  // through so the same email can still be a normal member account.
+  const adminCreds = await adminLogin.getCredentials();
+  const isAdminAttempt = !!adminCreds &&
+    String(email).trim().toLowerCase() === adminCreds.email;
+  if (isAdminAttempt) {
+    if (adminLogin.isBlocked(req.ip)) {
+      return res.status(429).json({
+        error: "Too many failed attempts. Try again in 15 minutes."
+      });
+    }
+    if (await adminLogin.verifyAdminPassword(password, adminCreds)) {
+      adminLogin.clearFails(req.ip);
+      return res.json({
+        admin: true,
+        token: adminLogin.signAdminToken(adminCreds),
+        user: { email: adminCreds.email }
+      });
+    }
+  }
+
   const result = await pool.query(
     "select * from users where email = $1",
     [email]
@@ -83,23 +107,15 @@ router.post("/login", asyncHandler(async (req, res) => {
 
   console.log("USER FOUND:", !!user);
 
-  if (!user) {
-    console.log("LOGIN FAILED: USER NOT FOUND");
-
-    return res.status(401).json({
-      error: "Invalid email or password"
-    });
-  }
-
-  const ok = await bcrypt.compare(
-    password,
-    user.password_hash
-  );
+  const ok = user
+    ? await bcrypt.compare(password, user.password_hash)
+    : false;
 
   console.log("PASSWORD MATCH:", ok);
 
   if (!ok) {
-    console.log("LOGIN FAILED: PASSWORD DOES NOT MATCH");
+    console.log("LOGIN FAILED");
+    if (isAdminAttempt) adminLogin.recordFail(req.ip);
 
     return res.status(401).json({
       error: "Invalid email or password"
@@ -111,12 +127,22 @@ router.post("/login", asyncHandler(async (req, res) => {
     name: user.name,
     email: user.email
   };
+  const responseUser = {
+    ...publicUser,
+    permissions: effectivePermissions(user),
+    permissionExpires: activeExpiries(user)
+  };
+
+  // Best-effort: a tracking failure must never block a valid login.
+  pool
+    .query("update users set last_login_at = now(), last_seen_at = now() where id = $1", [user.id])
+    .catch((err) => console.error("last_login update failed:", err.message));
 
   console.log("LOGIN SUCCESS");
 
   res.json({
     token: signToken(publicUser),
-    user: publicUser
+    user: responseUser
   });
 }));
 
@@ -124,12 +150,19 @@ router.post("/login", asyncHandler(async (req, res) => {
 // check the account page can call on open.
 router.get("/me", requireAuth, asyncHandler(async (req, res) => {
   const result = await pool.query(
-    "select id, name, email, position from users where id = $1",
+    "select id, name, email, position, permissions, permission_expires from users where id = $1",
     [req.user.id]
   );
-  const user = result.rows[0];
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
+  const row = result.rows[0];
+  if (!row) return res.status(404).json({ error: "User not found" });
+  const { permission_expires, ...user } = row;
+  // serverTime lets the app judge expiry by the server's clock, not the device's.
+  res.json({
+    ...user,
+    permissions: effectivePermissions(row),
+    permissionExpires: activeExpiries(row),
+    serverTime: new Date().toISOString()
+  });
 }));
 
 // UPDATE MY PROFILE — for now just the self-reported position field; name
