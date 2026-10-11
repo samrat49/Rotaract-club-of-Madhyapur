@@ -1384,6 +1384,20 @@
             <div class="field"><label>Cash in Bank (Rs)</label><input type="text" id="tenureSummaryBank" disabled /></div>
           </div>
           <button class="btn secondary" id="tenureCloseBtn" style="margin-top:12px;" onclick="openTenureCloseModal()">Close &amp; Start New Year</button>
+
+          <div id="openingEditBox" style="margin-top:22px; padding-top:16px; border-top:1px solid var(--border);">
+            <h3 style="margin:0 0 6px; font-size:15px;">Correct Opening Balances</h3>
+            <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
+              Changes the active tenure's starting amounts. Every balance this year is recalculated from them. A reason is required and the change is recorded in the activity log.
+            </p>
+            <div class="balance-edit">
+              <div class="field"><label>Opening Cash in Hand (Rs)</label><input type="number" id="openingEditCash" /></div>
+              <div class="field"><label>Opening Cash in Online (Rs)</label><input type="number" id="openingEditOnline" /></div>
+              <div class="field"><label>Opening Cash in Bank (Rs)</label><input type="number" id="openingEditBank" /></div>
+            </div>
+            <div class="field" style="max-width:480px; margin-top:8px;"><label>Reason for change</label><input type="text" id="openingEditReason" placeholder="e.g. Wrong bank balance entered at setup" /></div>
+            <button class="btn" style="margin-top:12px;" onclick="saveOpeningBalances()">Save Opening Balances</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1889,6 +1903,7 @@ const api = {
   get: (path) => apiFetch(path),
   post: (path, body) => apiFetch(path, { method: "POST", body: JSON.stringify(body) }),
   put: (path, body) => apiFetch(path, { method: "PUT", body: JSON.stringify(body) }),
+  patch: (path, body) => apiFetch(path, { method: "PATCH", body: JSON.stringify(body) }),
   del: (path) => apiFetch(path, { method: "DELETE" }),
 };
 
@@ -4177,6 +4192,33 @@ function renderTenureSettingsCard() {
   document.getElementById("tenureSummaryOnline").value = active ? fmt(accountTotalForTenure(active, "Online")) : "—";
   document.getElementById("tenureSummaryBank").value = active ? fmt(accountTotalForTenure(active, "Bank")) : "—";
   document.getElementById("tenureCloseBtn").style.display = active ? "" : "none";
+  document.getElementById("openingEditBox").style.display = active ? "" : "none";
+  if (active) {
+    document.getElementById("openingEditCash").value = active.openingCash;
+    document.getElementById("openingEditOnline").value = active.openingOnline;
+    document.getElementById("openingEditBank").value = active.openingBank;
+    document.getElementById("openingEditReason").value = "";
+  }
+}
+
+async function saveOpeningBalances() {
+  const active = state.tenures.find((t) => t.id === state.activeTenureId);
+  if (!active) return;
+  const read = (id) => document.getElementById(id).value.trim();
+  const [cash, online, bank] = [read("openingEditCash"), read("openingEditOnline"), read("openingEditBank")];
+  const reason = read("openingEditReason");
+  if ([cash, online, bank].some((v) => v === "" || !Number.isFinite(Number(v)))) { alert("Please enter all three opening balances."); return; }
+  if (!reason) { alert("Please give a reason for the change."); return; }
+  if (!confirm(`Change opening balances of ${active.label}?\n\nCash: ${fmt(active.openingCash)} → ${fmt(Number(cash))}\nOnline: ${fmt(active.openingOnline)} → ${fmt(Number(online))}\nBank: ${fmt(active.openingBank)} → ${fmt(Number(bank))}`)) return;
+  try {
+    const updated = normalizeTenure(await api.patch(`/api/tenures/${active.id}/opening`, {
+      openingCash: Number(cash), openingOnline: Number(online), openingBank: Number(bank), reason,
+    }));
+    Object.assign(active, updated);
+    renderAll();
+  } catch (err) {
+    notifyError(err);
+  }
 }
 
 // Live balance for a specific tenure (used for the active tenure's summary

@@ -94,6 +94,58 @@ router.post("/", requirePermission("settings"), asyncHandler(async (req, res) =>
   res.json(tenure);
 }));
 
+// Corrects the active tenure's opening balances (e.g. a mistake made when the
+// first tenure was set up). Closed tenures stay locked. A reason is required
+// and the old/new values are written to the activity log.
+router.patch("/:id/opening", requirePermission("settings"), asyncHandler(async (req, res) => {
+  const { openingCash, openingOnline, openingBank, reason } = req.body;
+  const values = [openingCash, openingOnline, openingBank];
+  if (values.some((v) => v === undefined || v === null || v === "" || !Number.isFinite(Number(v)))) {
+    return res.status(400).json({ error: "openingCash, openingOnline and openingBank must all be numbers" });
+  }
+  if (!reason || !String(reason).trim()) {
+    return res.status(400).json({ error: "Please give a reason for changing the opening balances" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const cur = await client.query("select * from tenures where id = $1 for update", [req.params.id]);
+    const before = cur.rows[0];
+    if (!before) {
+      await client.query("rollback");
+      return res.status(404).json({ error: "Tenure not found" });
+    }
+    if (before.status !== "active") {
+      await client.query("rollback");
+      return res.status(409).json({ error: "Only the active tenure's opening balances can be changed." });
+    }
+    const upd = await client.query(
+      "update tenures set opening_cash = $1, opening_online = $2, opening_bank = $3 where id = $4 returning *",
+      [Number(openingCash), Number(openingOnline), Number(openingBank), before.id]
+    );
+    await client.query("commit");
+    const after = upd.rows[0];
+
+    await logActivity({
+      action: "update",
+      entityType: "tenure",
+      entityId: after.id,
+      summary: `Changed opening balances of "${after.label}" — Cash Rs ${before.opening_cash} → ${after.opening_cash}, Online Rs ${before.opening_online} → ${after.opening_online}, Bank Rs ${before.opening_bank} → ${after.opening_bank}. Reason: ${String(reason).trim()}`,
+      before,
+      after,
+      user: req.user,
+    });
+
+    res.json(after);
+  } catch (err) {
+    await client.query("rollback").catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}));
+
 // The handover: closes the active tenure with computed closing balances and
 // opens the next one, carrying those closing balances forward as its
 // opening balances — all in one DB transaction so the two tenures can never
